@@ -18,15 +18,45 @@ Painel do nutricionista, em **React 19 + TypeScript + Vite**.
 src/
 ├── main.tsx        # bootstrap do React
 ├── App.tsx         # casca do painel
-├── components/     # componentes reutilizáveis
+├── components/     # componentes reutilizáveis (plan/: blocos e busca de alimento)
 ├── pages/          # uma pasta/arquivo por tela
 ├── lib/
 │   ├── env.ts      # leitura validada das variáveis VITE_*
-│   └── api.ts      # cliente HTTP + injeção do JWT
+│   ├── api.ts      # cliente HTTP + injeção do JWT
+│   ├── auth.ts     # login e sessão do nutricionista
+│   └── plans.ts    # API e rascunho do construtor de planos
 └── types/          # tipos compartilhados
 ```
 
 O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app.json`).
+
+## Telas
+
+### Login
+
+Entra com email e senha de um **nutricionista** (`POST /auth/login`); paciente é
+recusado. O token fica na `sessionStorage` da aba e é injetado em todas as chamadas
+(`src/lib/auth.ts`). É uma versão mínima, para as rotas protegidas funcionarem.
+
+### Construtor de planos alimentares (Task 5.1, RF09.1)
+
+`src/pages/PlanBuilderPage.tsx`. O nutricionista:
+
+1. informa o **id do paciente** (a lista de pacientes vinculados chega na Task 1.5) e,
+   se quiser, carrega o plano ativo dele para partir dele;
+2. dá título e orientações gerais ao plano;
+3. monta os **blocos de refeição**: nome (com sugestões: café da manhã, ceia...),
+   horário, **meta de kcal** e **meta de proteínas**, e a **lista de alimentos** com
+   gramas. O alimento pode vir da busca na TACO (selo `TACO`, entra como
+   `alimento_taco_id`) ou ser digitado livre;
+4. reordena/remove blocos e vê, por bloco, a estimativa de kcal e proteínas dos
+   alimentos escolhidos da TACO contra a meta, e no rodapé as metas do dia;
+5. clica em **Prescrever plano** (`POST /pacientes/{id}/planos`): o plano novo vira o
+   ativo e substitui o anterior.
+
+A validação (`src/lib/plans.ts`) repete os limites do back-end para o erro aparecer no
+campo. Para testar, o nutricionista precisa estar vinculado ao paciente
+(`POST /linking-code` + `POST /link` no back-end).
 
 ## Rodando localmente
 
@@ -36,8 +66,8 @@ npm install
 npm run dev
 ```
 
-Abre em <http://localhost:5173>. A tela inicial mostra se a API do back-end
-está respondendo — útil para conferir que o `.env.local` está correto.
+Abre em <http://localhost:5173>. O rodapé mostra se a API do back-end está
+respondendo, o que ajuda a conferir se o `.env.local` está correto.
 
 ## Scripts
 
