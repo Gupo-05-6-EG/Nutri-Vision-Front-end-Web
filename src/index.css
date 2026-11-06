@@ -281,3 +281,54 @@ code {
   cursor: pointer;
   text-decoration: underline;
 }
+
+.patients {
+  margin-bottom: 1.5rem;
+}
+
+.patients__empty {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.patients__list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.patients__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.patients__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.patients__info strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.patients__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.button--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}

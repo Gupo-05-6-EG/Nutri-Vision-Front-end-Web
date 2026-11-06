@@ -1,13 +1,14 @@
 /**
  * Destino temporário depois do login: a casca com o teste de conexão que já
- * existia. Os dashboards e a gestão de vínculos entram nas Tasks 1.5 e 5.x e
- * substituem esta tela.
+ * existia. A gestão de vínculos (Task 1.5) já aparece aqui; os dashboards entram
+ * na Task 5.x e substituem esta tela.
  */
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { ApiConnectionCard } from '@/components/ApiConnectionCard';
 import { env } from '@/lib/env';
+import { PatientsPage } from '@/pages/PatientsPage';
 import { getHealth } from '@/lib/api';
 
 type Status =
@@ -42,6 +43,7 @@ export function HomePage() {
           Sair
         </button>
       </header>
+      <PatientsPage />
       <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
     </main>
   );

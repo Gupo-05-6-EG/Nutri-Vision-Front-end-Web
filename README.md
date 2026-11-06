@@ -19,7 +19,7 @@ src/
 ├── main.tsx        # bootstrap do React
 ├── App.tsx         # casca do painel
 ├── components/     # componentes reutilizáveis
-├── pages/          # uma pasta/arquivo por tela
+├── pages/          # uma pasta/arquivo por tela (PatientsPage: vínculos, RF15)
 ├── lib/
 │   ├── env.ts      # leitura validada das variáveis VITE_*
 │   └── api.ts      # cliente HTTP + injeção do JWT
