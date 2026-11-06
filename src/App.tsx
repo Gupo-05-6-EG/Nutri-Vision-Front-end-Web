@@ -1,45 +1,34 @@
 /**
- * Casca do painel do nutricionista.
- *
- * Nesta task ela só existe para provar que o build, o alias `@/` e a leitura
- * do `.env` estão de pé: mostra a conexão com a API. As telas reais entram nas
- * Tasks 1.2 (login), 1.5 (vínculos) e 5.x (planos e dashboards).
+ * Casca do painel do nutricionista: sem sessão mostra login/cadastro, com
+ * sessão mostra o painel. As demais telas entram nas Tasks 1.5 e 5.x.
  */
 
-import { useEffect, useState } from 'react';
-import { ApiConnectionCard } from '@/components/ApiConnectionCard';
-import { env } from '@/lib/env';
-import { getHealth } from '@/lib/api';
+import { useState } from 'react';
+import { AuthProvider } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/useAuth';
+import { HomePage } from '@/pages/HomePage';
+import { LoginPage } from '@/pages/LoginPage';
+import { RegisterPage } from '@/pages/RegisterPage';
 
-type Status =
-  { state: 'loading' } | { state: 'ok'; service: string } | { state: 'error'; message: string };
+function GuestScreens() {
+  const [view, setView] = useState<'login' | 'register'>('login');
+
+  return view === 'login' ? (
+    <LoginPage onGoToRegister={() => setView('register')} />
+  ) : (
+    <RegisterPage onGoToLogin={() => setView('login')} />
+  );
+}
+
+function Gate() {
+  const { status } = useAuth();
+  return status === 'authenticated' ? <HomePage /> : <GuestScreens />;
+}
 
 export default function App() {
-  const [status, setStatus] = useState<Status>({ state: 'loading' });
-
-  useEffect(() => {
-    let cancelled = false;
-    getHealth()
-      .then((health) => {
-        if (!cancelled) setStatus({ state: 'ok', service: health.service });
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setStatus({ state: 'error', message: error instanceof Error ? error.message : 'Falha' });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <main className="shell">
-      <header>
-        <h1>{env.appName}</h1>
-        <p>Painel do nutricionista — ambiente {env.environment}</p>
-      </header>
-      <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
-    </main>
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   );
 }
