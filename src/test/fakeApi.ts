@@ -52,6 +52,14 @@ export const nutritionist = {
   crn: 'CRN-3 12345',
 };
 
+/** JWT falso com `exp` daqui a [hours] horas (negativo = ja expirado). */
+export function fakeJwt(hours = 24, sub = '10'): string {
+  const encode = (value: object) =>
+    btoa(JSON.stringify(value)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+  const exp = Math.floor(Date.now() / 1000) + Math.round(hours * 3600);
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub, exp })}.assinatura`;
+}
+
 export const loginResponse = (user = nutritionist, hours = 24) =>
   json({
     access_token: 'token-da-ana',

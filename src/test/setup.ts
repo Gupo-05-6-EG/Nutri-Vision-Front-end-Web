@@ -1,12 +1,16 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
-import { logout } from '@/lib/auth';
+import { setAuthToken, setUnauthorizedHandler } from '@/lib/api';
 
 afterEach(() => {
   cleanup();
-  logout(); // token do cliente HTTP e sessionStorage nao vazam entre testes
+  // Token do cliente HTTP e sessao salva nao vazam entre testes.
+  setAuthToken(null);
+  setUnauthorizedHandler(null);
+  localStorage.clear();
   sessionStorage.clear();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });

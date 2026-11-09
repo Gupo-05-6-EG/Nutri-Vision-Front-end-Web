@@ -1,114 +1,122 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/useAuth';
 import { LoginPage } from '@/pages/LoginPage';
-import { detail, fakeApi, loginResponse, nutritionist } from '@/test/fakeApi';
+import { detail, fakeApi, fakeJwt, loginResponse } from '@/test/fakeApi';
 
-async function fillIn(email = 'ana@exemplo.com', password = 'senha-forte-123') {
-  const user = userEvent.setup();
-  await user.type(screen.getByLabelText('Email'), email);
-  await user.type(screen.getByLabelText('Senha'), password);
-  return user;
+function Status() {
+  return <span data-testid="status">{useAuth().status}</span>;
 }
 
+function renderLogin(onGoToRegister = vi.fn()) {
+  render(
+    <AuthProvider>
+      <Status />
+      <LoginPage onGoToRegister={onGoToRegister} />
+    </AuthProvider>,
+  );
+  return { onGoToRegister, user: userEvent.setup() };
+}
+
+const email = () => screen.getByLabelText('E-mail profissional');
+const password = () => screen.getByLabelText('Senha de acesso');
+const submit = () => screen.getByRole('button', { name: 'Entrar no painel clínico' });
+
 describe('LoginPage', () => {
-  it('so habilita Entrar com email e senha preenchidos', async () => {
-    render(<LoginPage onLogin={vi.fn()} />);
-    const button = screen.getByRole('button', { name: 'Entrar' });
-    expect(button).toBeDisabled();
+  it('valida os campos antes de chamar a API', async () => {
+    const { calls } = fakeApi({});
+    const { user } = renderLogin();
 
-    const user = userEvent.setup();
-    await user.type(screen.getByLabelText('Email'), 'ana@exemplo.com');
-    expect(button).toBeDisabled();
-    await user.type(screen.getByLabelText('Senha'), 'x');
-    expect(button).toBeEnabled();
+    await user.click(submit());
+    expect(screen.getByText('Informe seu e-mail.')).toBeInTheDocument();
+    expect(screen.getByText('Informe sua senha.')).toBeInTheDocument();
+    expect(email()).toHaveAttribute('aria-invalid', 'true');
+
+    await user.type(email(), 'ana@exemplo');
+    await user.click(submit());
+    expect(screen.getByText('E-mail inválido.')).toBeInTheDocument();
+
+    expect(calls).toHaveLength(0);
   });
 
-  it('entra e devolve a sessao do nutricionista', async () => {
+  it('entra, guarda o token e abre a sessao', async () => {
     const { calls } = fakeApi({ 'POST /auth/login': () => loginResponse() });
-    const onLogin = vi.fn();
-    render(<LoginPage onLogin={onLogin} />);
+    const { user } = renderLogin();
 
-    const user = await fillIn();
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    await user.type(email(), '  ana@exemplo.com ');
+    await user.type(password(), 'senha-forte-123');
+    await user.click(submit());
 
-    await vi.waitFor(() => expect(onLogin).toHaveBeenCalledOnce());
-    expect(onLogin.mock.calls[0][0]).toMatchObject({ token: 'token-da-ana', user: nutritionist });
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
     expect(calls[0].body).toEqual({ email: 'ana@exemplo.com', senha: 'senha-forte-123' });
+    expect(localStorage.getItem('nutrivision.token')).toBe('token-da-ana');
   });
 
-  it('Enter no campo de senha envia o formulario', async () => {
-    fakeApi({ 'POST /auth/login': () => loginResponse() });
-    const onLogin = vi.fn();
-    render(<LoginPage onLogin={onLogin} />);
-
-    const user = await fillIn();
-    await user.keyboard('{Enter}');
-
-    await vi.waitFor(() => expect(onLogin).toHaveBeenCalledOnce());
-  });
-
-  it('401 mostra mensagem amigavel', async () => {
-    fakeApi({ 'POST /auth/login': () => detail('Email ou senha invalidos', 401) });
-    const onLogin = vi.fn();
-    render(<LoginPage onLogin={onLogin} />);
-
-    const user = await fillIn();
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Email ou senha inválidos.');
-    expect(onLogin).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled();
-  });
-
-  it('paciente e barrado no painel', async () => {
-    fakeApi({
-      'POST /auth/login': () => loginResponse({ ...nutritionist, perfil: 'paciente' } as never),
-    });
-    const onLogin = vi.fn();
-    render(<LoginPage onLogin={onLogin} />);
-
-    const user = await fillIn('paciente@exemplo.com');
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'O painel é exclusivo para nutricionistas.',
-    );
-    expect(onLogin).not.toHaveBeenCalled();
-  });
-
-  it('falha de rede mostra o erro e limpa ao tentar de novo', async () => {
-    let fail = true;
-    fakeApi({
-      'POST /auth/login': () => {
-        if (fail) throw new TypeError('Failed to fetch');
-        return loginResponse();
+  it.each([
+    [() => detail('Email ou senha invalidos', 401), 'E-mail ou senha incorretos.'],
+    [() => new Response('', { status: 503 }), 'O servidor está indisponível'],
+    [
+      () => {
+        throw new TypeError('Failed to fetch');
       },
-    });
-    const onLogin = vi.fn();
-    render(<LoginPage onLogin={onLogin} />);
+      'Não foi possível conectar ao servidor',
+    ],
+  ])('mostra o erro da API (%#)', async (handler, message) => {
+    fakeApi({ 'POST /auth/login': handler });
+    const { user } = renderLogin();
 
-    const user = await fillIn();
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Failed to fetch');
+    await user.type(email(), 'ana@exemplo.com');
+    await user.type(password(), 'x');
+    await user.click(submit());
 
-    fail = false;
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
-    await vi.waitFor(() => expect(onLogin).toHaveBeenCalledOnce());
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByTestId('status')).toHaveTextContent('unauthenticated');
+    expect(submit()).toBeEnabled();
   });
 
-  it('mostra Entrando e desabilita o botao enquanto espera', async () => {
-    let respond!: (r: Response) => void;
-    fakeApi({ 'POST /auth/login': () => new Promise<Response>((resolve) => (respond = resolve)) });
-    render(<LoginPage onLogin={vi.fn()} />);
+  it('desabilita o botao enquanto entra', async () => {
+    let respond!: (response: Response) => void;
+    const { calls } = fakeApi({
+      'POST /auth/login': () => new Promise<Response>((resolve) => (respond = resolve)),
+    });
+    const { user } = renderLogin();
 
-    const user = await fillIn();
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    await user.type(email(), 'ana@exemplo.com');
+    await user.type(password(), 'x');
+    await user.click(submit());
 
-    const waiting = await screen.findByRole('button', { name: 'Entrando…' });
-    expect(waiting).toBeDisabled();
+    const button = screen.getByRole('button', { name: 'Entrando…' });
+    expect(button).toBeDisabled();
+    await user.click(button);
+    expect(calls).toHaveLength(1);
+
     respond(loginResponse());
-    expect(await screen.findByRole('button', { name: 'Entrar' })).toBeEnabled();
+    expect(await screen.findByText('authenticated')).toBeInTheDocument();
+  });
+
+  it('mostra o aviso quando a sessao salva expirou', () => {
+    localStorage.setItem('nutrivision.token', fakeJwt(-1));
+    renderLogin();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Sua sessão expirou.');
+    expect(localStorage.getItem('nutrivision.token')).toBeNull();
+  });
+
+  it('mostra e oculta a senha', async () => {
+    const { user } = renderLogin();
+
+    expect(password()).toHaveAttribute('type', 'password');
+    await user.click(screen.getByRole('button', { name: 'Mostrar senha' }));
+    expect(password()).toHaveAttribute('type', 'text');
+    await user.click(screen.getByRole('button', { name: 'Ocultar senha' }));
+    expect(password()).toHaveAttribute('type', 'password');
+  });
+
+  it('leva para o cadastro', async () => {
+    const { user, onGoToRegister } = renderLogin();
+    await user.click(screen.getByRole('button', { name: 'Cadastre-se aqui' }));
+    expect(onGoToRegister).toHaveBeenCalledOnce();
   });
 });

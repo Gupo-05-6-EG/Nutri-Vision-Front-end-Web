@@ -1,9 +1,10 @@
 import { type Page, type Route, expect, test } from '@playwright/test';
 
 /**
- * Fluxo principal do nutricionista no painel: login -> construtor de planos
- * (busca na TACO, metas, blocos) -> prescrever para o paciente -> reabrir o
- * plano ativo. A API e simulada com estado em `http://api.test`.
+ * Fluxo principal do nutricionista no painel: login -> pacientes vinculados ->
+ * aba do construtor de planos (busca na TACO, metas, blocos) -> prescrever para
+ * o paciente -> reabrir o plano ativo. A API e simulada com estado em
+ * `http://api.test`.
  */
 
 const API = 'http://api.test/api/v1';
@@ -78,6 +79,11 @@ async function mockApi(page: Page): Promise<MockState> {
         usuario: { id: 10, nome: 'Dra. Ana', email, perfil: 'nutricionista', crn: 'CRN-3 12345' },
       });
     }
+    if (path === '/patients') {
+      return reply(route, [
+        { paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' },
+      ]);
+    }
     if (path === '/alimentos-taco') {
       const nome = (url.searchParams.get('nome') ?? '').toLowerCase();
       return reply(
@@ -125,10 +131,12 @@ async function mockApi(page: Page): Promise<MockState> {
 
 async function login(page: Page, senha = 'senha-forte-123') {
   await page.goto('/');
-  await page.getByLabel('Email').fill('ana@exemplo.com');
-  await page.getByLabel('Senha').fill(senha);
-  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.getByLabel('E-mail profissional').fill('ana@exemplo.com');
+  await page.getByLabel('Senha de acesso').fill(senha);
+  await page.getByRole('button', { name: 'Entrar no painel clínico' }).click();
 }
+
+const loginHeading = (page: Page) => page.getByRole('heading', { name: 'Bem-vindo de volta' });
 
 async function pickFood(page: Page, block: number, term: string, option: RegExp, grams: string) {
   const meal = page.getByRole('group', { name: `Refeição ${block}` });
@@ -142,17 +150,18 @@ test('login com senha errada mostra o erro e nao entra', async ({ page }) => {
   await mockApi(page);
   await login(page, 'errada');
 
-  await expect(page.getByRole('alert')).toHaveText('Email ou senha inválidos.');
-  await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveText('E-mail ou senha incorretos.');
+  await expect(loginHeading(page)).toBeVisible();
 });
 
 test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ page }) => {
   const api = await mockApi(page);
 
-  // 1. Login
+  // 1. Login: abre na aba de pacientes vinculados
   await login(page);
-  await expect(page.getByText('Dra. Ana')).toBeVisible();
+  await expect(page.getByText('Alex Silva')).toBeVisible();
   await expect(page.getByText('Conectado')).toBeVisible();
+  await page.getByRole('tab', { name: 'Planos alimentares' }).click();
 
   // 2. Paciente sem plano ainda
   await page.getByLabel('Id do paciente').fill('7');
@@ -245,9 +254,10 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
   await expect(almoco.getByLabel('Horário')).toHaveValue('12:30');
   await expect(almoco.getByRole('combobox', { name: 'Alimento' })).toHaveCount(2);
 
-  // 7. A sessao sobrevive ao recarregar a aba e Sair encerra
+  // 7. A sessao sobrevive ao recarregar a pagina e Sair encerra
   await page.reload();
-  await expect(page.getByText('Dra. Ana')).toBeVisible();
+  await expect(page.getByText('Alex Silva')).toBeVisible();
+  await expect(loginHeading(page)).toBeHidden();
   await page.getByRole('button', { name: 'Sair' }).click();
-  await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible();
+  await expect(loginHeading(page)).toBeVisible();
 });
