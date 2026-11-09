@@ -1,66 +1,79 @@
-import { useState } from 'react';
-import { type Session, login } from '@/lib/auth';
-import { ApiError } from '@/lib/api';
-import { describeError } from '@/lib/plans';
+import { useState, type SubmitEvent } from 'react';
+import { useAuth } from '@/auth/useAuth';
+import { AuthLayout } from '@/components/AuthLayout';
+import { FormAlert } from '@/components/FormAlert';
+import { PasswordField, TextField } from '@/components/TextField';
+import { describeAuthError } from '@/lib/authErrors';
+import { validateEmail, validateLoginPassword } from '@/lib/validators';
 
 interface Props {
-  onLogin: (session: Session) => void;
+  onGoToRegister: () => void;
 }
 
-export function LoginPage({ onLogin }: Props) {
+export function LoginPage({ onGoToRegister }: Props) {
+  const { login, notice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [sending, setSending] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = async (event: React.FormEvent) => {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSending(true);
-    setError('');
+
+    const nextErrors = {
+      email: validateEmail(email),
+      password: validateLoginPassword(password),
+    };
+    setErrors(nextErrors);
+    if (nextErrors.email || nextErrors.password) return;
+
+    setSubmitting(true);
+    setFormError(null);
     try {
-      onLogin(await login(email, password));
-    } catch (err) {
-      setError(
-        err instanceof ApiError && err.status === 401
-          ? 'Email ou senha inválidos.'
-          : describeError(err),
-      );
-    } finally {
-      setSending(false);
+      await login(email.trim(), password);
+    } catch (error) {
+      setFormError(describeAuthError(error));
+      setSubmitting(false);
     }
-  };
+  }
 
   return (
-    <form className="card login" onSubmit={submit} noValidate>
-      <h2>Entrar</h2>
-      <label className="field">
-        <span>Email</span>
-        <input
+    <AuthLayout
+      title="Bem-vindo de volta"
+      subtitle="Acesse o seu painel profissional com as suas credenciais cadastradas."
+    >
+      {notice && <FormAlert tone="info" message={notice} />}
+      {formError && <FormAlert message={formError} />}
+
+      <form className="auth__form" onSubmit={handleSubmit} noValidate>
+        <TextField
+          label="E-mail profissional"
           type="email"
           autoComplete="username"
-          required
+          placeholder="dra.camila@nutrivision.com.br"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          error={errors.email}
         />
-      </label>
-      <label className="field">
-        <span>Senha</span>
-        <input
-          type="password"
+        <PasswordField
+          label="Senha de acesso"
           autoComplete="current-password"
-          required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          error={errors.password}
         />
-      </label>
-      {error && (
-        <p className="field__error" role="alert">
-          {error}
-        </p>
-      )}
-      <button type="submit" className="primary-button" disabled={sending || !email || !password}>
-        {sending ? 'Entrando…' : 'Entrar'}
-      </button>
-    </form>
+        <button type="submit" className="button" disabled={submitting}>
+          {submitting ? 'Entrando…' : 'Entrar no painel clínico'}
+        </button>
+      </form>
+
+      <p className="auth__switch">
+        Ainda não tem conta profissional?{' '}
+        <button type="button" className="link" onClick={onGoToRegister}>
+          Cadastre-se aqui
+        </button>
+      </p>
+    </AuthLayout>
   );
 }

@@ -8,9 +8,18 @@
 import { env } from '@/lib/env';
 
 let authToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
+}
+
+/**
+ * Chamado quando a API responde 401 *com um token em uso* (sessão expirada ou
+ * invalidada). Não dispara em 401 sem token (ex.: senha errada no login).
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
 }
 
 export class ApiError extends Error {
@@ -32,11 +41,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${env.apiUrl}${path}`, { ...init, headers });
 
   if (!response.ok) {
+    if (response.status === 401 && authToken) unauthorizedHandler?.();
     const detail = await response.text().catch(() => '');
     throw new ApiError(response.status, detail || `HTTP ${response.status}`);
   }
 
-  return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+  // 204 e respostas sem corpo (ex.: 201 do cadastro) não têm JSON para ler.
+  const text = response.status === 204 ? '' : await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {

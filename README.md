@@ -19,11 +19,10 @@ src/
 ├── main.tsx        # bootstrap do React
 ├── App.tsx         # casca do painel
 ├── components/     # componentes reutilizáveis (plan/: blocos e busca de alimento)
-├── pages/          # uma pasta/arquivo por tela
+├── pages/          # uma pasta/arquivo por tela (PatientsPage: vínculos, RF15)
 ├── lib/
 │   ├── env.ts      # leitura validada das variáveis VITE_*
 │   ├── api.ts      # cliente HTTP + injeção do JWT
-│   ├── auth.ts     # login e sessão do nutricionista
 │   └── plans.ts    # API e rascunho do construtor de planos
 └── types/          # tipos compartilhados
 ```
@@ -32,17 +31,19 @@ O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app
 
 ## Telas
 
-### Login
+### Login e cadastro (Task 1.2)
 
-Entra com email e senha de um **nutricionista** (`POST /auth/login`); paciente é
-recusado. O token fica na `sessionStorage` da aba e é injetado em todas as chamadas
-(`src/lib/auth.ts`). É uma versão mínima, para as rotas protegidas funcionarem.
+`src/auth/AuthProvider.tsx`: o token fica no `localStorage` e é injetado em todas as
+chamadas; um 401 com sessão aberta volta para o login com o aviso de sessão expirada.
+
+Depois de entrar, a home tem duas abas: **Pacientes** (vínculos, Task 1.5) e
+**Planos alimentares** (Task 5.1).
 
 ### Construtor de planos alimentares (Task 5.1, RF09.1)
 
 `src/pages/PlanBuilderPage.tsx`. O nutricionista:
 
-1. informa o **id do paciente** (a lista de pacientes vinculados chega na Task 1.5) e,
+1. informa o **id do paciente** e,
    se quiser, carrega o plano ativo dele para partir dele;
 2. dá título e orientações gerais ao plano;
 3. monta os **blocos de refeição**: nome (com sugestões: café da manhã, ceia...),

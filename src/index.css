@@ -7,6 +7,7 @@
   --accent: #2e7d4f;
   --danger: #b3261e;
   --warning: #9a6700;
+  --on-accent: #ffffff;
 
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
@@ -20,6 +21,7 @@
     --muted: #a3b4a9;
     --border: #2b3a30;
     --accent: #6fd39a;
+    --on-accent: #0b1a10;
   }
 }
 
@@ -122,6 +124,230 @@ code {
   font-family: ui-monospace, Consolas, monospace;
 }
 
+/* ---------- Login e cadastro ---------- */
+
+.auth {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 30rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 2rem;
+}
+
+.auth__brand {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.auth__card h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+}
+
+.auth__subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.auth__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.auth__switch {
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.field input:not([type='checkbox']),
+.field select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.field__toggle {
+  flex: none;
+  padding: 0 0.75rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.field__error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
+.checkbox {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.checkbox input {
+  margin-top: 0.15rem;
+}
+
+.alert {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.alert--error {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.alert--info {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.button {
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.button--secondary {
+  color: var(--text);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.shell header .button {
+  margin: 0 0 2rem;
+}
+
+.link {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.patients {
+  margin-bottom: 1.5rem;
+}
+
+.patients__empty {
+  margin: 0.75rem 0;
+  color: var(--muted);
+}
+
+.patients__list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.patients__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.patients__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.patients__info strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.patients__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.button--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
 /* --- Formulários --------------------------------------------------------- */
 
 input,
@@ -155,7 +381,7 @@ textarea {
   resize: vertical;
 }
 
-.field {
+.plan-builder .field {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
@@ -163,7 +389,7 @@ textarea {
   font-size: 0.9rem;
 }
 
-.field > span {
+.plan-builder .field > span {
   color: var(--muted);
 }
 
@@ -235,15 +461,6 @@ button:disabled {
   margin-bottom: 0.9rem;
 }
 
-.login {
-  max-width: 24rem;
-  margin-bottom: 1.5rem;
-}
-
-.login .primary-button {
-  width: 100%;
-}
-
 /* --- Construtor de planos (Task 5.1) ------------------------------------- */
 
 .plan-builder {
@@ -295,12 +512,12 @@ button:disabled {
   margin-top: 2rem;
 }
 
-.field--wide {
+.plan-builder .field--wide {
   grid-column: span 2;
 }
 
 @media (max-width: 30rem) {
-  .field--wide {
+  .plan-builder .field--wide {
     grid-column: auto;
   }
 }
@@ -329,12 +546,12 @@ button:disabled {
   margin-top: 0.2rem;
 }
 
-.field--grow {
+.plan-builder .field--grow {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.field--grams {
+.plan-builder .field--grams {
   flex: 0 0 5.5rem;
 }
 
@@ -422,4 +639,29 @@ button:disabled {
 .notice--error {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+/* ---------- Abas da área logada ---------- */
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs__tab {
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs__tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
