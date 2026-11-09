@@ -81,6 +81,9 @@ respondendo, o que ajuda a conferir se o `.env.local` está correto.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format` | Prettier (escreve) |
 | `npm run format:check` | Prettier (só verifica) |
+| `npm test` | testes de componentes (Vitest + Testing Library) |
+| `npm run test:coverage` | testes com cobertura (mínimo de 80% de linhas) |
+| `npm run test:e2e` | E2E do fluxo principal (Playwright; rode `npx playwright install chromium` uma vez) |
 
 ## Variáveis de ambiente
 
@@ -91,8 +94,20 @@ segredo aqui**.
 ## CI/CD (RNF08)
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a cada push e pull
-request em `main`/`develop`: Prettier, oxlint, `tsc` e build de produção, com o
-`dist/` publicado como artefato.
+request em `main`/`dev`: Prettier, oxlint, `tsc` e build de produção (com o
+`dist/` publicado como artefato), testes de componentes com cobertura e o E2E
+do fluxo principal no Chromium.
+
+## Testes (Task 7.4)
+
+- **Componentes** (`src/**/*.test.tsx`): Vitest em jsdom com Testing Library.
+  O `fetch` é trocado por uma API falsa (`src/test/fakeApi.ts`), então nenhum
+  teste depende do back-end no ar.
+- **E2E** (`e2e/`): Playwright contra o build de produção (`vite preview`), com
+  a API interceptada no navegador. Cobre login → pacientes vinculados → aba do
+  construtor de planos (busca na TACO, metas, blocos) → prescrever → reabrir o
+  plano ativo → recarregar a página → sair.
+- Os testes dos dashboards entram junto com a Task 5.2.
 
 ## Repositórios do projeto
 

@@ -1,3 +1,6 @@
 dist
 node_modules
 *.md
+coverage
+test-results
+playwright-report
