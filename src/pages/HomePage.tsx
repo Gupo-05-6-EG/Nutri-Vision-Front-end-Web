@@ -11,6 +11,7 @@ import { env } from '@/lib/env';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { getHealth } from '@/lib/api';
+import { LinkingCodePage } from '@/pages/LinkingCodePage';
 
 type Tab = 'patients' | 'plans';
 
@@ -72,6 +73,7 @@ export function HomePage() {
         {tab === 'patients' ? <PatientsPage /> : <PlanBuilderPage />}
       </section>
       <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
+      <LinkingCodePage />
     </main>
   );
 }
