@@ -324,4 +324,17 @@ describe('PlanBuilderPage - plano ativo', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Paciente nao encontrado');
   });
+
+  it('com initialPlan já abre o plano para editar, sem chamar a API', () => {
+    const { calls } = fakeApi({});
+    render(<PlanBuilderPage initialPlan={activePlan} />);
+
+    expect(screen.getByLabelText(/^Título/)).toHaveValue('Plano de outubro');
+    expect(screen.getByLabelText('Id do paciente')).toHaveValue('7');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Plano ativo "Plano de outubro" carregado. Ao prescrever, ele é substituído.',
+    );
+    expect(meal(2).getByRole('combobox', { name: 'Alimento' })).toHaveValue('Sopa');
+    expect(calls).toHaveLength(0);
+  });
 });
