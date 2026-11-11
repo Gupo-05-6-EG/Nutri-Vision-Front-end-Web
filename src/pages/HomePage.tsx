@@ -1,22 +1,25 @@
 /**
- * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5) e do
- * construtor de planos (Task 5.1), mais o teste de conexão no rodapé. Os
- * dashboards entram na Task 5.2.
+ * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5),
+ * construtor de planos (Task 5.1) e dashboards de acompanhamento com alertas
+ * de abandono (Task 5.2), mais o teste de conexão no rodapé.
  */
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { ApiConnectionCard } from '@/components/ApiConnectionCard';
+import { getHealth } from '@/lib/api';
 import { env } from '@/lib/env';
+import { DashboardPage } from '@/pages/DashboardPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
-import { getHealth } from '@/lib/api';
+import type { LinkedPatient } from '@/types/links';
 
-type Tab = 'patients' | 'plans';
+type Tab = 'patients' | 'plans' | 'dashboard';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'patients', label: 'Pacientes' },
   { id: 'plans', label: 'Planos alimentares' },
+  { id: 'dashboard', label: 'Dashboards' },
 ];
 
 type Status =
@@ -26,6 +29,7 @@ export function HomePage() {
   const { logout } = useAuth();
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [tab, setTab] = useState<Tab>('patients');
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,6 +46,11 @@ export function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  const handleSelectPatientDashboard = (patient: LinkedPatient) => {
+    setSelectedPatientId(patient.id);
+    setTab('dashboard');
+  };
 
   return (
     <main className="shell">
@@ -69,7 +78,16 @@ export function HomePage() {
         ))}
       </nav>
       <section role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === 'patients' ? <PatientsPage /> : <PlanBuilderPage />}
+        {tab === 'patients' && (
+          <PatientsPage onSelectPatientDashboard={handleSelectPatientDashboard} />
+        )}
+        {tab === 'plans' && <PlanBuilderPage />}
+        {tab === 'dashboard' && (
+          <DashboardPage
+            key={selectedPatientId ?? 'default'}
+            initialPatientId={selectedPatientId}
+          />
+        )}
       </section>
       <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
     </main>

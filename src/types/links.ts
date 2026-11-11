@@ -8,4 +8,10 @@ export interface LinkedPatient {
   email: string;
   status: LinkStatus;
   linkedAt: string | null;
+  /** Ofensiva atual do paciente (RF16). */
+  streak?: number;
+  /** Quantos dias consecutivos o paciente está com `streak == 0` (RF10.1). */
+  zeroStreakDays?: number;
+  /** Sinalizador explícito de abandono quando enviado pelo backend (RF10.1). */
+  abandonmentAlert?: boolean;
 }

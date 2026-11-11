@@ -41,6 +41,9 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /health': health,
       'GET /patients': patients,
+      'GET /pacientes/7/planos/ativo': () => detail('Paciente sem plano ativo', 404),
+      'GET /refeicoes/consumo-diario': () =>
+        json({ paciente_id: 7, data: '2026-11-11', quantidade_refeicoes: 0, totais: {} }),
     });
     render(<App />);
 
@@ -59,6 +62,14 @@ describe('App', () => {
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-plans');
     expect(screen.getByRole('button', { name: 'Prescrever plano' })).toBeInTheDocument();
     expect(screen.queryByText('Alex Silva')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Pacientes' }));
+    await user.click(await screen.findByRole('button', { name: 'Ver desempenho' }));
+    expect(screen.getByRole('tab', { name: 'Dashboards' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-dashboard');
 
     // Todas as chamadas depois do login levam o token.
     const authed = calls.filter((c) => c.path !== '/auth/login');

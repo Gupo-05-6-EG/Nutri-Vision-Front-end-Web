@@ -118,4 +118,42 @@ describe('PatientsPage', () => {
     );
     expect(screen.getByText('Alex Silva')).toBeInTheDocument();
   });
+
+  it('exibe icone e badge de alerta vermelho se streak == 0 por 3 dias consecutivos', async () => {
+    const emAbandono = {
+      paciente_id: 9,
+      nome: 'Carlos Lima',
+      email: 'carlos@email.com',
+      status: 'ativo',
+      streak: 0,
+      dias_streak_zero: 3,
+    };
+    const doisDias = {
+      paciente_id: 10,
+      nome: 'Dora Nunes',
+      email: 'dora@email.com',
+      status: 'ativo',
+      streak: 0,
+      dias_streak_zero: 2,
+    };
+    const ativoStreak = {
+      paciente_id: 11,
+      nome: 'Eva Rocha',
+      email: 'eva@email.com',
+      status: 'ativo',
+      streak: 5,
+      dias_streak_zero: 0,
+    };
+    fakeApi({ 'GET /patients': () => json([emAbandono, doisDias, ativoStreak]) });
+    render(<PatientsPage />);
+
+    expect(await screen.findByText('Carlos Lima')).toBeInTheDocument();
+    expect(
+      within(item('Carlos Lima')).getByLabelText(
+        /Alerta de abandono: Carlos Lima com ofensiva zerada por 3 ou mais dias consecutivos/i,
+      ),
+    ).toBeInTheDocument();
+    expect(within(item('Dora Nunes')).queryByText('Alerta de abandono')).not.toBeInTheDocument();
+    expect(within(item('Eva Rocha')).getByText('Ofensiva: 5d')).toBeInTheDocument();
+  });
 });

@@ -91,6 +91,15 @@ async function mockApi(page: Page): Promise<MockState> {
         TACO.filter((f) => f.nome.toLowerCase().includes(nome)),
       );
     }
+    if (path === '/refeicoes/consumo-diario') {
+      const data = url.searchParams.get('data') ?? '2026-11-11';
+      return reply(route, {
+        paciente_id: 7,
+        data,
+        quantidade_refeicoes: 3,
+        totais: { calorias_kcal: 980 },
+      });
+    }
     if (path === '/pacientes/7/planos/ativo') {
       return state.activePlan
         ? reply(route, state.activePlan)
