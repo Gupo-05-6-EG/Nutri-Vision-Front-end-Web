@@ -25,6 +25,9 @@ function nextMealName(draft: PlanDraft): string {
   return MEAL_NAME_SUGGESTIONS.find((name) => !used.has(name)) ?? '';
 }
 
+const loadedText = (plan: Plan) =>
+  `Plano ativo "${plan.titulo}" carregado. Ao prescrever, ele é substituído.`;
+
 /**
  * Construtor de planos alimentares (RF09.1).
  *
@@ -32,14 +35,19 @@ function nextMealName(draft: PlanDraft): string {
  * os alimentos de cada um, e prescreve o plano para o paciente: o novo plano
  * passa a ser o ativo. Também dá para partir do plano ativo atual.
  *
- * O paciente é escolhido pelo id enquanto a lista de pacientes vinculados
- * (Task 1.5) não existe.
+ * O paciente é escolhido pelo id. Com `initialPlan` (o plano ativo vindo do
+ * histórico de versões, Task 5.3) a tela já abre com ele para edição; salvar
+ * gera uma versão nova.
  */
-export function PlanBuilderPage() {
-  const [patientId, setPatientId] = useState('');
-  const [draft, setDraft] = useState<PlanDraft>(emptyDraft);
+export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
+  const [patientId, setPatientId] = useState(initialPlan ? String(initialPlan.paciente_id) : '');
+  const [draft, setDraft] = useState<PlanDraft>(() =>
+    initialPlan ? fromPlan(initialPlan) : emptyDraft(),
+  );
   const [errors, setErrors] = useState<DraftErrors>({});
-  const [notice, setNotice] = useState<Notice>(null);
+  const [notice, setNotice] = useState<Notice>(() =>
+    initialPlan ? { kind: 'info', text: loadedText(initialPlan) } : null,
+  );
   const [busy, setBusy] = useState<'loading' | 'saving' | null>(null);
   const [saved, setSaved] = useState<Plan | null>(null);
 
@@ -64,10 +72,7 @@ export function PlanBuilderPage() {
         setDraft(fromPlan(plan));
         setErrors({});
         setSaved(null);
-        setNotice({
-          kind: 'info',
-          text: `Plano ativo "${plan.titulo}" carregado. Ao prescrever, ele é substituído.`,
-        });
+        setNotice({ kind: 'info', text: loadedText(plan) });
       } else {
         setNotice({ kind: 'info', text: 'Este paciente ainda não tem plano ativo.' });
       }
