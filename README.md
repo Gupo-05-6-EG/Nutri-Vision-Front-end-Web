@@ -63,6 +63,12 @@ segredo aqui**.
 request em `main`/`develop`: Prettier, oxlint, `tsc` e build de produção, com o
 `dist/` publicado como artefato.
 
+## Documentação Técnica do Sistema
+
+Para entender a arquitetura completa, integrações e modelagem de dados:
+- [Documento de Arquitetura](../Documentação/ARQUITETURA.md) — Visão C4, fluxos de integração e modelo clínico.
+- [Modelagem de Banco de Dados](../Documentação/BANCO_DE_DADOS.md) — DER completo e dicionário de dados.
+
 ## Repositórios do projeto
 
 - [Nutri-Vision-Back-end](https://github.com/Gupo-05-6-EG/Nutri-Vision-Back-end) — API FastAPI
