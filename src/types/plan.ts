@@ -55,6 +55,18 @@ export interface Plan {
   totais: { meta_kcal: number; meta_proteinas_g: number };
 }
 
+/** Quem salvou uma versão do plano (Task 5.3). */
+export interface PlanAuthor {
+  id: number;
+  nome: string;
+}
+
+/** Uma versão do plano no histórico: o plano completo, a numeração e o autor. */
+export interface PlanVersion extends Plan {
+  versao: number;
+  autor: PlanAuthor | null;
+}
+
 export interface TacoFood {
   id: number;
   nome: string;

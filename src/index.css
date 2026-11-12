@@ -679,3 +679,127 @@ button:disabled {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* --- Histórico de versões do plano (Task 5.3) ---------------------------- */
+
+.plan-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.plan-history .field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+  font-size: 0.9rem;
+}
+
+.plan-history .field > span {
+  color: var(--muted);
+}
+
+.plan-history__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.history__header h3 {
+  margin: 0;
+}
+
+.history__badge {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.history__meta,
+.history__none {
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.history__title {
+  margin: 0.25rem 0 0.75rem;
+  font-weight: 600;
+}
+
+.history__item h4 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+.changes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.change {
+  padding: 0.1rem 0;
+}
+
+.change span {
+  display: inline-block;
+  width: 1.1rem;
+  font-weight: 700;
+}
+
+.change--added span {
+  color: var(--accent);
+}
+
+.change--removed span {
+  color: var(--danger);
+}
+
+.change--changed span {
+  color: var(--warning);
+}
+
+.history__details {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.history__details summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.history__meal {
+  margin-top: 0.6rem;
+}
+
+.history__meal ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
