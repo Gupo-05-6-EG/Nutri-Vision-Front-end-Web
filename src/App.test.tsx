@@ -19,6 +19,29 @@ async function login() {
 }
 
 describe('App', () => {
+  it('navega pelas abas com teclado e mantém um único tab no percurso', async () => {
+    fakeApi({
+      'POST /auth/login': () => loginResponse(),
+      'GET /health': health,
+      'GET /patients': patients,
+    });
+    render(<App />);
+    const user = await login();
+    const first = await screen.findByRole('tab', { name: 'Pacientes' });
+    const last = screen.getByRole('tab', { name: 'Histórico do plano' });
+    expect(last).toHaveAttribute('tabindex', '-1');
+    first.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(last).toHaveFocus();
+    expect(last).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Histórico do plano');
+    await user.keyboard('{Home}{ArrowRight}');
+    const plans = screen.getByRole('tab', { name: 'Planos alimentares' });
+    expect(plans).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('tabpanel')).toHaveFocus();
+  });
+
   it('sem sessao abre no login e alterna para o cadastro', async () => {
     const { calls } = fakeApi({});
     render(<App />);

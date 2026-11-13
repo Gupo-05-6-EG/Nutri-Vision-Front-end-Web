@@ -4,10 +4,12 @@
   --text: #1c2b21;
   --muted: #5f7268;
   --border: #dde5e0;
+  --control-border: #64756a;
   --accent: #2e7d4f;
   --danger: #b3261e;
   --warning: #9a6700;
   --on-accent: #ffffff;
+  --danger-fill: #b3261e;
 
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
@@ -20,8 +22,11 @@
     --text: #e7efe9;
     --muted: #a3b4a9;
     --border: #2b3a30;
+    --control-border: #84988a;
     --accent: #6fd39a;
     --on-accent: #0b1a10;
+    --danger: #ffb4ab;
+    --warning: #f3c771;
   }
 }
 
@@ -197,7 +202,7 @@ code {
   font: inherit;
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 0.5rem;
 }
 
@@ -218,7 +223,7 @@ code {
   font-size: 0.8rem;
   color: var(--muted);
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 0.5rem;
   cursor: pointer;
 }
@@ -279,7 +284,7 @@ code {
 .button--secondary {
   color: var(--text);
   background: transparent;
-  border-color: var(--border);
+  border-color: var(--control-border);
 }
 
 .shell header .button {
@@ -344,8 +349,9 @@ code {
 }
 
 .button--danger {
-  background: var(--danger);
-  border-color: var(--danger);
+  color: #ffffff;
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
 }
 
 /* --- Formulários --------------------------------------------------------- */
@@ -362,12 +368,15 @@ textarea {
   width: 100%;
   padding: 0.5rem 0.65rem;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 0.5rem;
 }
 
 input:focus-visible,
 textarea:focus-visible,
+select:focus-visible,
+a:focus-visible,
+[role='tabpanel']:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -409,7 +418,7 @@ textarea {
 
 .primary-button {
   background: var(--accent);
-  color: var(--surface);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -431,7 +440,7 @@ textarea {
   height: 2rem;
   flex: none;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 0.4rem;
   cursor: pointer;
 }
