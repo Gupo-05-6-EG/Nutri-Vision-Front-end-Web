@@ -343,6 +343,22 @@ code {
   font-size: 0.875rem;
 }
 
+.evolution-report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  flex-basis: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.evolution-report label {
+  display: grid;
+  gap: 0.25rem;
+}
+
 .button--danger {
   background: var(--danger);
   border-color: var(--danger);
