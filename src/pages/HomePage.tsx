@@ -8,18 +8,20 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { ApiConnectionCard } from '@/components/ApiConnectionCard';
 import { env } from '@/lib/env';
+import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
 import { getHealth } from '@/lib/api';
 import type { Plan } from '@/types/plan';
 
-type Tab = 'patients' | 'plans' | 'history';
+type Tab = 'patients' | 'plans' | 'history' | 'alerts';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'patients', label: 'Pacientes' },
   { id: 'plans', label: 'Planos alimentares' },
   { id: 'history', label: 'Histórico do plano' },
+  { id: 'alerts', label: 'Alertas de desvio' },
 ];
 
 type Status =
@@ -89,6 +91,7 @@ export function HomePage() {
             }}
           />
         )}
+        {tab === 'alerts' && <DeviationAlertsPage />}
       </section>
       <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
     </main>
