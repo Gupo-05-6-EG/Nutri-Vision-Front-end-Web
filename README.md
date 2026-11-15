@@ -23,7 +23,8 @@ src/
 ├── lib/
 │   ├── env.ts      # leitura validada das variáveis VITE_*
 │   ├── api.ts      # cliente HTTP + injeção do JWT
-│   └── plans.ts    # API e rascunho do construtor de planos
+│   ├── plans.ts    # API e rascunho do construtor de planos
+│   └── planHistory.ts # histórico de versões do plano e "o que mudou"
 └── types/          # tipos compartilhados
 ```
 
@@ -36,8 +37,9 @@ O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app
 `src/auth/AuthProvider.tsx`: o token fica no `localStorage` e é injetado em todas as
 chamadas; um 401 com sessão aberta volta para o login com o aviso de sessão expirada.
 
-Depois de entrar, a home tem três abas: **Pacientes** (vínculos e alertas de abandono,
-Tasks 1.5 e 5.2), **Planos alimentares** (Task 5.1) e **Dashboards** (Task 5.2).
+Depois de entrar, a home tem quatro abas: **Pacientes** (vínculos e alertas de abandono,
+Tasks 1.5 e 5.2), **Planos alimentares** (Task 5.1), **Histórico do plano** (Task 5.3)
+e **Dashboards** (Task 5.2).
 
 ### Dashboards e alertas de abandono (Task 5.2, RF07.1, RF10.1)
 
@@ -66,6 +68,25 @@ Tasks 1.5 e 5.2), **Planos alimentares** (Task 5.1) e **Dashboards** (Task 5.2).
    alimentos escolhidos da TACO contra a meta, e no rodapé as metas do dia;
 5. clica em **Prescrever plano** (`POST /pacientes/{id}/planos`): o plano novo vira o
    ativo e substitui o anterior.
+
+### Histórico de versões do plano (Task 5.3, RF08, RNF08)
+
+`src/pages/PlanHistoryPage.tsx` (aba **Histórico do plano**). O nutricionista informa o
+id do paciente e vê, da mais nova para a mais antiga, cada versão salva do plano com o
+**autor**, a **data/hora** (horário de Brasília) e **o que mudou** em relação à versão
+anterior (título, orientações, refeições adicionadas/removidas, horário, metas e
+alimentos). **Editar plano ativo** abre o construtor já com o plano carregado; salvar
+(`POST /pacientes/{id}/planos`) gera uma versão nova.
+
+Contrato esperado do back-end (Task 5.3 [Back]), documentado em `src/lib/planHistory.ts`:
+
+- `GET /pacientes/{id}/planos/versoes`: lista de versões, da mais nova para a mais antiga.
+  Cada item é o plano completo (mesmos campos de `GET /pacientes/{id}/planos/ativo`) mais
+  `versao` (número sequencial por paciente) e `autor` (`{ id, nome }` ou `null`).
+  Só o nutricionista vinculado ao paciente; 404 sem paciente e 403 sem vínculo.
+
+O "o que mudou" é calculado no front, comparando cada versão com a anterior (os blocos
+pelo nome, porque os ids mudam a cada versão).
 
 A validação (`src/lib/plans.ts`) repete os limites do back-end para o erro aparecer no
 campo. Para testar, o nutricionista precisa estar vinculado ao paciente

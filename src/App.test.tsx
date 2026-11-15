@@ -78,6 +78,52 @@ describe('App', () => {
     );
   });
 
+  it('do histórico do plano, Editar plano ativo abre o construtor já carregado', async () => {
+    const plan = {
+      id: 2,
+      paciente_id: 7,
+      nutricionista_id: 10,
+      titulo: 'Plano ajustado',
+      observacao: null,
+      ativo: true,
+      criado_em: '2026-11-05T12:00:00Z',
+      refeicoes: [
+        {
+          id: 1,
+          nome: 'Almoço',
+          horario: null,
+          meta_kcal: 700,
+          meta_proteinas_g: 40,
+          observacao: null,
+          alimentos: [{ id: 1, nome_alimento: 'Arroz', quantidade_g: 200, alimento_taco_id: null }],
+        },
+      ],
+      totais: { meta_kcal: 700, meta_proteinas_g: 40 },
+    };
+    fakeApi({
+      'POST /auth/login': () => loginResponse(),
+      'GET /health': health,
+      'GET /patients': patients,
+      'GET /pacientes/7/planos/versoes': () =>
+        json([{ ...plan, versao: 1, autor: { id: 10, nome: 'Dra. Ana' } }]),
+    });
+    render(<App />);
+    const user = await login();
+    await screen.findByText('Alex Silva');
+
+    await user.click(screen.getByRole('tab', { name: 'Histórico do plano' }));
+    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.click(screen.getByRole('button', { name: 'Ver histórico' }));
+    await user.click(await screen.findByRole('button', { name: 'Editar plano ativo' }));
+
+    expect(screen.getByRole('tab', { name: 'Planos alimentares' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(await screen.findByLabelText(/^Título/)).toHaveValue('Plano ajustado');
+    expect(screen.getByLabelText('Id do paciente')).toHaveValue('7');
+  });
+
   it('Sair volta ao login e apaga o token', async () => {
     fakeApi({
       'POST /auth/login': () => loginResponse(),

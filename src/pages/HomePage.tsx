@@ -1,7 +1,8 @@
 /**
- * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5),
- * construtor de planos (Task 5.1) e dashboards de acompanhamento com alertas
- * de abandono (Task 5.2), mais o teste de conexão no rodapé.
+ * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5), do
+ * construtor de planos (Task 5.1), do histórico de versões do plano (Task 5.3)
+ * e dashboards de acompanhamento com alertas de abandono (Task 5.2), mais o
+ * teste de conexão no rodapé.
  */
 
 import { useEffect, useState } from 'react';
@@ -12,13 +13,16 @@ import { env } from '@/lib/env';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
+import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
 import type { LinkedPatient } from '@/types/links';
+import type { Plan } from '@/types/plan';
 
-type Tab = 'patients' | 'plans' | 'dashboard';
+type Tab = 'patients' | 'plans' | 'history' | 'dashboard';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'patients', label: 'Pacientes' },
   { id: 'plans', label: 'Planos alimentares' },
+  { id: 'history', label: 'Histórico do plano' },
   { id: 'dashboard', label: 'Dashboards' },
 ];
 
@@ -30,6 +34,8 @@ export function HomePage() {
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [tab, setTab] = useState<Tab>('patients');
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
+  // Plano ativo que abre para edição no construtor (vindo do histórico).
+  const [editing, setEditing] = useState<Plan | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +77,10 @@ export function HomePage() {
             aria-selected={tab === item.id}
             aria-controls={`panel-${item.id}`}
             className={tab === item.id ? 'tabs__tab tabs__tab--active' : 'tabs__tab'}
-            onClick={() => setTab(item.id)}
+            onClick={() => {
+              setEditing(null);
+              setTab(item.id);
+            }}
           >
             {item.label}
           </button>
@@ -81,7 +90,17 @@ export function HomePage() {
         {tab === 'patients' && (
           <PatientsPage onSelectPatientDashboard={handleSelectPatientDashboard} />
         )}
-        {tab === 'plans' && <PlanBuilderPage />}
+        {tab === 'plans' && (
+          <PlanBuilderPage key={editing?.id ?? 'new'} initialPlan={editing ?? undefined} />
+        )}
+        {tab === 'history' && (
+          <PlanHistoryPage
+            onEdit={(plan) => {
+              setEditing(plan);
+              setTab('plans');
+            }}
+          />
+        )}
         {tab === 'dashboard' && (
           <DashboardPage
             key={selectedPatientId ?? 'default'}
