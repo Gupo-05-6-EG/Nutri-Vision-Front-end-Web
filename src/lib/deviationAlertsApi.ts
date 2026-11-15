@@ -67,4 +67,3 @@ export function validateDeviationRule(
 
   return { parsed: { percent: normalizedPercent, days: normalizedDays } };
 }
-

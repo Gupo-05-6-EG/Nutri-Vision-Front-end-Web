@@ -39,4 +39,3 @@ export interface ProcessDeviationAlertsResult {
   data_referencia: string;
   alertas_gerados: number;
 }
-
