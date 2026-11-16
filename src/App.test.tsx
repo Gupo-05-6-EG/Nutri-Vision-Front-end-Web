@@ -19,6 +19,29 @@ async function login() {
 }
 
 describe('App', () => {
+  it('navega pelas abas com teclado e mantém um único tab no percurso', async () => {
+    fakeApi({
+      'POST /auth/login': () => loginResponse(),
+      'GET /health': health,
+      'GET /patients': patients,
+    });
+    render(<App />);
+    const user = await login();
+    const first = await screen.findByRole('tab', { name: 'Pacientes' });
+    const last = screen.getByRole('tab', { name: 'Alertas de desvio' });
+    expect(last).toHaveAttribute('tabindex', '-1');
+    first.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(last).toHaveFocus();
+    expect(last).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Alertas de desvio');
+    await user.keyboard('{Home}{ArrowRight}');
+    const plans = screen.getByRole('tab', { name: 'Planos alimentares' });
+    expect(plans).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('tabpanel')).toHaveFocus();
+  });
+
   it('sem sessao abre no login e alterna para o cadastro', async () => {
     const { calls } = fakeApi({});
     render(<App />);
@@ -41,6 +64,9 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /health': health,
       'GET /patients': patients,
+      'GET /pacientes/7/planos/ativo': () => detail('Paciente sem plano ativo', 404),
+      'GET /refeicoes/consumo-diario': () =>
+        json({ paciente_id: 7, data: '2026-11-11', quantidade_refeicoes: 0, totais: {} }),
     });
     render(<App />);
 
@@ -59,6 +85,14 @@ describe('App', () => {
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-plans');
     expect(screen.getByRole('button', { name: 'Prescrever plano' })).toBeInTheDocument();
     expect(screen.queryByText('Alex Silva')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Pacientes' }));
+    await user.click(await screen.findByRole('button', { name: 'Ver desempenho' }));
+    expect(screen.getByRole('tab', { name: 'Dashboards' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-dashboard');
 
     // Todas as chamadas depois do login levam o token.
     const authed = calls.filter((c) => c.path !== '/auth/login');

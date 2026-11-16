@@ -37,8 +37,21 @@ O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app
 `src/auth/AuthProvider.tsx`: o token fica no `localStorage` e é injetado em todas as
 chamadas; um 401 com sessão aberta volta para o login com o aviso de sessão expirada.
 
-Depois de entrar, a home tem duas abas: **Pacientes** (vínculos, Task 1.5) e
-**Planos alimentares** (Task 5.1) e **Histórico do plano** (Task 5.3).
+Depois de entrar, a home tem quatro abas: **Pacientes** (vínculos e alertas de abandono,
+Tasks 1.5 e 5.2), **Planos alimentares** (Task 5.1), **Histórico do plano** (Task 5.3)
+e **Dashboards** (Task 5.2).
+
+### Dashboards e alertas de abandono (Task 5.2, RF07.1, RF10.1)
+
+- **Alerta de abandono (`src/pages/PatientsPage.tsx`, `src/lib/linksApi.ts`)**: exibe um
+  ícone e selo vermelho de advertência (`Alerta de abandono`) na lista de pacientes e no
+  dashboard quando `streak === 0` por 3 ou mais dias consecutivos (`dias_streak_zero >= 3`
+  ou `alerta_abandono = true`).
+- **Gráfico de 7 dias (`src/pages/DashboardPage.tsx`, `src/components/dashboard/SevenDayCaloriesChart.tsx`)**:
+  utiliza **Recharts** (`LineChart`) para comparar a **Linha de Meta Calórica** (fixa, a partir
+  do plano ativo em `GET /pacientes/{id}/planos/ativo`) com a **Linha de Consumo Real**
+  (`GET /refeicoes/consumo-diario` nos últimos 7 dias), além de indicadores de média consumida
+  e dias dentro da meta.
 
 ### Construtor de planos alimentares (Task 5.1, RF09.1)
 
@@ -128,6 +141,12 @@ do fluxo principal no Chromium.
   construtor de planos (busca na TACO, metas, blocos) → prescrever → reabrir o
   plano ativo → recarregar a página → sair.
 - Os testes dos dashboards entram junto com a Task 5.2.
+
+## Documentação Técnica do Sistema
+
+Para entender a arquitetura completa, integrações e modelagem de dados:
+- [Documento de Arquitetura](../Documentação/ARQUITETURA.md) — Visão C4, fluxos de integração e modelo clínico.
+- [Modelagem de Banco de Dados](../Documentação/BANCO_DE_DADOS.md) — DER completo e dicionário de dados.
 
 ## Repositórios do projeto
 

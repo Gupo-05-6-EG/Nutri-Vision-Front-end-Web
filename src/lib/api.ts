@@ -72,3 +72,17 @@ export interface HealthResponse {
 }
 
 export const getHealth = () => api.get<HealthResponse>('/health');
+
+export async function downloadPdf(path: string): Promise<Blob> {
+  const headers = new Headers({ Accept: 'application/pdf' });
+  if (authToken) headers.set('Authorization', `Bearer ${authToken}`);
+  const response = await fetch(`${env.apiUrl}${path}`, { headers });
+  if (!response.ok) {
+    if (response.status === 401 && authToken) unauthorizedHandler?.();
+    throw new ApiError(response.status, 'Falha ao exportar relat�rio');
+  }
+  if (!response.headers.get('Content-Type')?.includes('application/pdf')) {
+    throw new Error('Resposta inesperada do servidor');
+  }
+  return response.blob();
+}
