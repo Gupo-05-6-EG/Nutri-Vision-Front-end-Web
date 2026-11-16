@@ -1,27 +1,31 @@
 /**
  * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5), do
- * construtor de planos (Task 5.1) e do histórico de versões do plano (Task
- * 5.3), mais o teste de conexão no rodapé. Os dashboards entram na Task 5.2.
+ * construtor de planos (Task 5.1), do histórico de versões do plano (Task 5.3)
+ * e dashboards de acompanhamento com alertas de abandono (Task 5.2), mais o
+ * teste de conexão no rodapé.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { ApiConnectionCard } from '@/components/ApiConnectionCard';
+import { getHealth } from '@/lib/api';
 import { env } from '@/lib/env';
+import { DashboardPage } from '@/pages/DashboardPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
-import { getHealth } from '@/lib/api';
 import { LinkingCodePage } from '@/pages/LinkingCodePage';
+import type { LinkedPatient } from '@/types/links';
 import type { Plan } from '@/types/plan';
 
-type Tab = 'patients' | 'plans' | 'history';
+type Tab = 'patients' | 'plans' | 'history' | 'dashboard';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'patients', label: 'Pacientes' },
   { id: 'plans', label: 'Planos alimentares' },
   { id: 'history', label: 'Histórico do plano' },
+  { id: 'dashboard', label: 'Dashboards' },
 ];
 
 type Status =
@@ -31,6 +35,7 @@ export function HomePage() {
   const { logout } = useAuth();
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [tab, setTab] = useState<Tab>('patients');
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const tabList = useRef<HTMLElement>(null);
   // Plano ativo que abre para edição no construtor (vindo do histórico).
   const [editing, setEditing] = useState<Plan | null>(null);
@@ -71,6 +76,11 @@ export function HomePage() {
     };
   }, []);
 
+  const handleSelectPatientDashboard = (patient: LinkedPatient) => {
+    setSelectedPatientId(patient.id);
+    setTab('dashboard');
+  };
+
   return (
     <main className="shell">
       <header>
@@ -109,7 +119,9 @@ export function HomePage() {
         >
           {tab === id && (
             <>
-              {tab === 'patients' && <PatientsPage />}
+              {tab === 'patients' && (
+                <PatientsPage onSelectPatientDashboard={handleSelectPatientDashboard} />
+              )}
               {tab === 'plans' && (
                 <PlanBuilderPage key={editing?.id ?? 'new'} initialPlan={editing ?? undefined} />
               )}
@@ -120,6 +132,12 @@ export function HomePage() {
                     setTab('plans');
                     tabList.current?.querySelector<HTMLButtonElement>('#tab-plans')?.focus();
                   }}
+                />
+              )}
+              {tab === 'dashboard' && (
+                <DashboardPage
+                  key={selectedPatientId ?? 'default'}
+                  initialPatientId={selectedPatientId}
                 />
               )}
             </>
