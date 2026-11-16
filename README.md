@@ -129,6 +129,12 @@ do fluxo principal no Chromium.
   plano ativo → recarregar a página → sair.
 - Os testes dos dashboards entram junto com a Task 5.2.
 
+## Documentação Técnica do Sistema
+
+Para entender a arquitetura completa, integrações e modelagem de dados:
+- [Documento de Arquitetura](../Documentação/ARQUITETURA.md) — Visão C4, fluxos de integração e modelo clínico.
+- [Modelagem de Banco de Dados](../Documentação/BANCO_DE_DADOS.md) — DER completo e dicionário de dados.
+
 ## Repositórios do projeto
 
 - [Nutri-Vision-Back-end](https://github.com/Gupo-05-6-EG/Nutri-Vision-Back-end) — API FastAPI
