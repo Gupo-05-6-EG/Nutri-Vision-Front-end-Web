@@ -12,6 +12,7 @@ import { ApiConnectionCard } from '@/components/ApiConnectionCard';
 import { getHealth } from '@/lib/api';
 import { env } from '@/lib/env';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
@@ -19,13 +20,14 @@ import { LinkingCodePage } from '@/pages/LinkingCodePage';
 import type { LinkedPatient } from '@/types/links';
 import type { Plan } from '@/types/plan';
 
-type Tab = 'patients' | 'plans' | 'history' | 'dashboard';
+type Tab = 'patients' | 'plans' | 'history' | 'dashboard' | 'alerts';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'patients', label: 'Pacientes' },
   { id: 'plans', label: 'Planos alimentares' },
   { id: 'history', label: 'Histórico do plano' },
   { id: 'dashboard', label: 'Dashboards' },
+  { id: 'alerts', label: 'Alertas de desvio' },
 ];
 
 type Status =
@@ -140,6 +142,7 @@ export function HomePage() {
                   initialPatientId={selectedPatientId}
                 />
               )}
+              {tab === 'alerts' && <DeviationAlertsPage />}
             </>
           )}
         </section>

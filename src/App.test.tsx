@@ -28,13 +28,13 @@ describe('App', () => {
     render(<App />);
     const user = await login();
     const first = await screen.findByRole('tab', { name: 'Pacientes' });
-    const last = screen.getByRole('tab', { name: 'Dashboards' });
+    const last = screen.getByRole('tab', { name: 'Alertas de desvio' });
     expect(last).toHaveAttribute('tabindex', '-1');
     first.focus();
     await user.keyboard('{ArrowLeft}');
     expect(last).toHaveFocus();
     expect(last).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Dashboards');
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Alertas de desvio');
     await user.keyboard('{Home}{ArrowRight}');
     const plans = screen.getByRole('tab', { name: 'Planos alimentares' });
     expect(plans).toHaveFocus();
