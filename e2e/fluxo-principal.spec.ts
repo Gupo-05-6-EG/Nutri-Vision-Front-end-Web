@@ -67,6 +67,13 @@ async function mockApi(page: Page): Promise<MockState> {
     if (path === '/health') {
       return reply(route, { status: 'ok', service: 'nutri-vision-api', environment: 'e2e' });
     }
+    if (path === '/linking-code' && request.method() === 'POST') {
+      return reply(route, {
+        codigo: '123456',
+        status: 'ativo',
+        expira_em: new Date(Date.now() + 30 * 60_000).toISOString(),
+      });
+    }
     if (path === '/auth/login') {
       const { email, senha } = request.postDataJSON();
       if (email !== 'ana@exemplo.com' || senha !== 'senha-forte-123') {
@@ -169,6 +176,7 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
   // 1. Login: abre na aba de pacientes vinculados
   await login(page);
   await expect(page.getByText('Alex Silva')).toBeVisible();
+  await expect(page.getByText('123456')).toBeVisible();
   await expect(page.getByText('Conectado')).toBeVisible();
   await page.getByRole('tab', { name: 'Planos alimentares' }).click();
 

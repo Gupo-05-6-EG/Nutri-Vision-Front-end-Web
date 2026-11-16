@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { EvolutionReport } from '@/pages/EvolutionReport';
 import { FormAlert } from '@/components/FormAlert';
 import { TextField } from '@/components/TextField';
 import { describeLinkError } from '@/lib/linkErrors';
@@ -141,6 +142,7 @@ export function PatientsPage({ onSelectPatientDashboard }: PatientsPageProps = {
                   <span>Vinculado em {formatDate(patient.linkedAt)}</span>
                 </div>
 
+                <EvolutionReport patientId={patient.id} />
                 {confirmingId === patient.id ? (
                   <div className="patients__actions">
                     <span>Desvincular {patient.name}?</span>
