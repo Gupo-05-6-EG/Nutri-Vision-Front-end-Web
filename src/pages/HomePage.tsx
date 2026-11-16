@@ -13,6 +13,7 @@ import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
 import { getHealth } from '@/lib/api';
+import { LinkingCodePage } from '@/pages/LinkingCodePage';
 import type { Plan } from '@/types/plan';
 
 type Tab = 'patients' | 'plans' | 'history';
@@ -126,6 +127,7 @@ export function HomePage() {
         </section>
       ))}
       <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
+      <LinkingCodePage />
     </main>
   );
 }
