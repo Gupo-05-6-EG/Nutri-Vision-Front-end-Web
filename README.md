@@ -137,10 +137,17 @@ do fluxo principal no Chromium.
   O `fetch` é trocado por uma API falsa (`src/test/fakeApi.ts`), então nenhum
   teste depende do back-end no ar.
 - **E2E** (`e2e/`): Playwright contra o build de produção (`vite preview`), com
-  a API interceptada no navegador. Cobre login → pacientes vinculados → aba do
-  construtor de planos (busca na TACO, metas, blocos) → prescrever → reabrir o
-  plano ativo → recarregar a página → sair.
-- Os testes dos dashboards entram junto com a Task 5.2.
+  a API interceptada no navegador. São dois fluxos:
+  - [`fluxo-principal.spec.ts`](e2e/fluxo-principal.spec.ts): login → pacientes
+    vinculados → construtor de planos (busca na TACO, metas, blocos) →
+    prescrever → reabrir o plano ativo → recarregar a página → sair.
+  - [`acompanhamento.spec.ts`](e2e/acompanhamento.spec.ts): "Ver desempenho" →
+    dashboard de 7 dias (resumo, tabela, gráfico e alerta de abandono) → troca
+    de paciente → alertas de desvio (regra, verificação, marcar como lido e
+    filtro de não lidos).
+- Dashboards e alertas também têm testes de componente (`DashboardPage`,
+  `SevenDayCaloriesChart`, `DeviationAlertsPage`) e do cliente da API
+  (`deviationAlertsApi`).
 
 ## Documentação Técnica do Sistema
 
