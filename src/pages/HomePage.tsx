@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { Avatar, Icon } from '@/components/Icon';
+import { NotificationBell } from '@/components/NotificationBell';
 import type { IconName } from '@/components/Icon';
 import { getMe } from '@/lib/meApi';
 import type { Me } from '@/lib/meApi';
@@ -127,6 +128,7 @@ export function HomePage() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </form>
+          <NotificationBell onOpenPatient={(id) => go('pacientes', { id })} />
           <div className="topbar__user">
             {me ? (
               <span className="topbar__who">
