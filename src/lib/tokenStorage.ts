@@ -1,27 +1,38 @@
-/** Guarda o token JWT entre recargas da página. */
+/**
+ * Guarda o token JWT. Com "Lembrar de mim" fica no localStorage (sobrevive a
+ * fechar o navegador); sem, fica no sessionStorage (só até fechar a aba).
+ */
 
 const KEY = 'nutrivision.token';
 
+function safe<T>(action: () => T, fallback: T): T {
+  try {
+    return action();
+  } catch {
+    // Armazenamento bloqueado: a sessão vale só até recarregar a página.
+    return fallback;
+  }
+}
+
 export const tokenStorage = {
   get(): string | null {
-    try {
-      return localStorage.getItem(KEY);
-    } catch {
-      return null;
-    }
+    return safe(() => localStorage.getItem(KEY) ?? sessionStorage.getItem(KEY), null);
   },
-  set(token: string): void {
-    try {
-      localStorage.setItem(KEY, token);
-    } catch {
-      // Armazenamento bloqueado: a sessão vale só até recarregar a página.
-    }
+  set(token: string, remember = true): void {
+    safe(() => {
+      if (remember) {
+        localStorage.setItem(KEY, token);
+        sessionStorage.removeItem(KEY);
+      } else {
+        sessionStorage.setItem(KEY, token);
+        localStorage.removeItem(KEY);
+      }
+    }, undefined);
   },
   clear(): void {
-    try {
+    safe(() => {
       localStorage.removeItem(KEY);
-    } catch {
-      // Nada a apagar se o armazenamento está bloqueado.
-    }
+      sessionStorage.removeItem(KEY);
+    }, undefined);
   },
 };

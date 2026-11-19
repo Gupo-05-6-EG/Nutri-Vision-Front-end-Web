@@ -14,6 +14,7 @@ export function LoginPage({ onGoToRegister }: Props) {
   const { login, notice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -31,7 +32,7 @@ export function LoginPage({ onGoToRegister }: Props) {
     setSubmitting(true);
     setFormError(null);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, remember);
     } catch (error) {
       setFormError(describeAuthError(error));
       setSubmitting(false);
@@ -63,6 +64,14 @@ export function LoginPage({ onGoToRegister }: Props) {
           onChange={(event) => setPassword(event.target.value)}
           error={errors.password}
         />
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
+          />
+          <span>Lembrar de mim neste computador</span>
+        </label>
         <button type="submit" className="button" disabled={submitting}>
           {submitting ? 'Entrando…' : 'Entrar no painel clínico'}
         </button>

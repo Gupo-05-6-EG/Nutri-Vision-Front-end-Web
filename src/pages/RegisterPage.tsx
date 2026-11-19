@@ -3,6 +3,7 @@ import { useAuth } from '@/auth/useAuth';
 import { AuthLayout } from '@/components/AuthLayout';
 import { FormAlert } from '@/components/FormAlert';
 import { SelectField } from '@/components/SelectField';
+import { PasswordStrength } from '@/components/PasswordStrength';
 import { PasswordField, TextField } from '@/components/TextField';
 import { describeAuthError } from '@/lib/authErrors';
 import {
@@ -120,6 +121,7 @@ export function RegisterPage({ onGoToLogin }: Props) {
             onChange={(event) => setPassword(event.target.value)}
             error={errors.password}
           />
+          <PasswordStrength password={password} />
           <PasswordField
             label="Confirmar senha"
             autoComplete="new-password"

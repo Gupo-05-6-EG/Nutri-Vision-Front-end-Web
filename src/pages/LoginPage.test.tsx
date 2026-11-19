@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { useAuth } from '@/auth/useAuth';
 import { LoginPage } from '@/pages/LoginPage';
-import { detail, fakeApi, fakeJwt, loginResponse } from '@/test/fakeApi';
+import App from '@/App';
+import { detail, fakeApi, fakeJwt, json, loginResponse, nutritionist } from '@/test/fakeApi';
 
 function Status() {
   return <span data-testid="status">{useAuth().status}</span>;
@@ -118,5 +119,33 @@ describe('LoginPage', () => {
     const { user, onGoToRegister } = renderLogin();
     await user.click(screen.getByRole('button', { name: 'Cadastre-se aqui' }));
     expect(onGoToRegister).toHaveBeenCalledOnce();
+  });
+});
+
+describe('LoginPage - lembrar de mim', () => {
+  it('sem lembrar, o token fica so na sessao do navegador', async () => {
+    fakeApi({
+      'POST /auth/login': () => loginResponse(),
+      'GET /auth/me': () => json(nutritionist),
+    });
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('E-mail profissional'), 'ana@exemplo.com');
+    await user.type(screen.getByLabelText('Senha de acesso'), 'senha-forte-123');
+    await user.click(screen.getByLabelText('Lembrar de mim neste computador'));
+    await user.click(screen.getByRole('button', { name: 'Entrar no painel clínico' }));
+
+    await screen.findByRole('navigation', { name: 'Menu do painel' });
+    expect(localStorage.getItem('nutrivision.token')).toBeNull();
+    expect(sessionStorage.getItem('nutrivision.token')).toBe('token-da-ana');
+  });
+
+  it('tela de entrada apresenta o painel sem numeros inventados', () => {
+    fakeApi({});
+    render(<App />);
+
+    expect(screen.getByRole('complementary', { name: 'Sobre o Nutri Vision' })).toBeInTheDocument();
+    expect(screen.getByText('Registro por foto com IA')).toBeInTheDocument();
+    expect(screen.queryByText(/esqueceu/i)).not.toBeInTheDocument();
   });
 });

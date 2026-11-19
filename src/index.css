@@ -2011,3 +2011,134 @@ select:focus-visible {
   border: 0;
   cursor: pointer;
 }
+
+/* ---------- Login e cadastro (protótipo) ----------------------------------- */
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+  gap: 2.5rem;
+  align-items: center;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.auth__intro {
+  display: grid;
+  gap: 1.25rem;
+  padding: 2.5rem;
+  background: linear-gradient(160deg, var(--vivid-soft), var(--surface));
+  border: 2px solid var(--border);
+  border-radius: 1.75rem;
+}
+
+.auth__headline {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.auth__lead {
+  margin: 0;
+  color: var(--muted);
+}
+
+.auth__features {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth__features li {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.auth__features li > span:last-child {
+  display: grid;
+}
+
+.auth__feature-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--on-vivid);
+  background: var(--vivid);
+  border-radius: 0.75rem;
+}
+
+.auth__lgpd {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Caixa de seleção alinhada com a primeira linha do texto (P8). */
+.checkbox {
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.checkbox input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--primary);
+}
+
+.strength {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.strength__bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+}
+
+.strength__bars span {
+  height: 0.35rem;
+  background: var(--surface-high);
+  border-radius: 999px;
+}
+
+.strength--1 .strength__bar--on {
+  background: var(--red);
+}
+
+.strength--2 .strength__bar--on {
+  background: var(--orange);
+}
+
+.strength--3 .strength__bar--on {
+  background: var(--yellow);
+}
+
+.strength--4 .strength__bar--on {
+  background: var(--vivid);
+}
+
+@media (max-width: 56rem) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auth__intro {
+    display: none;
+  }
+}
