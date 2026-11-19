@@ -17,7 +17,7 @@ import type { Me } from '@/lib/meApi';
 import { useHashRoute } from '@/lib/useHashRoute';
 import type { RouteName } from '@/lib/useHashRoute';
 import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
-import { LinkingCodePage } from '@/pages/LinkingCodePage';
+import { LinkingCodeDialog } from '@/pages/LinkingCodeDialog';
 import { OverviewPage } from '@/pages/OverviewPage';
 import { PatientsHubPage } from '@/pages/PatientsHubPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
@@ -36,6 +36,7 @@ export function HomePage() {
   const { route, navigate } = useHashRoute();
   const [me, setMe] = useState<Me | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [codeOpen, setCodeOpen] = useState(false);
   const [search, setSearch] = useState('');
   // Plano ativo que abre para edição no construtor (vindo do histórico).
   const [editing, setEditing] = useState<Plan | null>(null);
@@ -145,7 +146,7 @@ export function HomePage() {
           {route.name === 'visao-geral' && (
             <OverviewPage
               onOpenPatient={(id) => go('pacientes', { id })}
-              onInvite={() => go('pacientes', { convidar: 1 })}
+              onInvite={() => setCodeOpen(true)}
             />
           )}
           {route.name === 'pacientes' && (
@@ -156,9 +157,8 @@ export function HomePage() {
                 initialQuery={route.params.get('busca') ?? ''}
                 onSelect={(id) => go('pacientes', id ? { id } : {})}
                 onPrescribe={(id) => go('prescricao', { id })}
-                onGenerateCode={() => go('pacientes', { convidar: 1 })}
+                onGenerateCode={() => setCodeOpen(true)}
               />
-              <LinkingCodePage />
             </>
           )}
           {route.name === 'prescricao' && (
@@ -200,6 +200,7 @@ export function HomePage() {
           {route.name === 'alertas' && <DeviationAlertsPage />}
         </main>
       </div>
+      <LinkingCodeDialog open={codeOpen} onClose={() => setCodeOpen(false)} />
     </div>
   );
 }

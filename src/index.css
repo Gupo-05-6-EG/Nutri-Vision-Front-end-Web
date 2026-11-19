@@ -1836,3 +1836,54 @@ select:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------- Diálogo do código de vinculação -------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 45%);
+}
+
+.dialog {
+  width: min(28rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 1.5rem;
+  box-shadow: 0 6px 0 var(--step);
+}
+
+.dialog__body {
+  display: grid;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.dialog__header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.link-qr {
+  justify-self: center;
+  width: 13.75rem;
+  height: 13.75rem;
+  padding: 0.5rem;
+  background: #ffffff;
+  border: 2px solid var(--border);
+  border-radius: 1rem;
+}
