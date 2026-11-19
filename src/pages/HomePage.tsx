@@ -1,154 +1,202 @@
 /**
- * Área logada do nutricionista: abas de pacientes (vínculos, Task 1.5), do
- * construtor de planos (Task 5.1), do histórico de versões do plano (Task 5.3)
- * e dashboards de acompanhamento com alertas de abandono (Task 5.2), mais o
- * teste de conexão no rodapé.
+ * Área logada do nutricionista no layout do protótipo: menu lateral (Visão
+ * Geral, Pacientes & Vínculos, Prescrição de Dietas e Alertas), barra superior
+ * com a busca de paciente e o profissional logado, e a seção escolhida.
+ *
+ * A seção fica no hash da URL (`#/pacientes`), então o voltar do navegador e o
+ * recarregar a página mantêm onde o nutricionista estava.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useAuth } from '@/auth/useAuth';
-import { ApiConnectionCard } from '@/components/ApiConnectionCard';
-import { getHealth } from '@/lib/api';
-import { env } from '@/lib/env';
+import { Avatar, Icon } from '@/components/Icon';
+import type { IconName } from '@/components/Icon';
+import { getMe } from '@/lib/meApi';
+import type { Me } from '@/lib/meApi';
+import { useHashRoute } from '@/lib/useHashRoute';
+import type { RouteName } from '@/lib/useHashRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
+import { LinkingCodePage } from '@/pages/LinkingCodePage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
-import { LinkingCodePage } from '@/pages/LinkingCodePage';
 import type { LinkedPatient } from '@/types/links';
 import type { Plan } from '@/types/plan';
 
-type Tab = 'patients' | 'plans' | 'history' | 'dashboard' | 'alerts';
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'patients', label: 'Pacientes' },
-  { id: 'plans', label: 'Planos alimentares' },
-  { id: 'history', label: 'Histórico do plano' },
-  { id: 'dashboard', label: 'Dashboards' },
-  { id: 'alerts', label: 'Alertas de desvio' },
+export const NAV: { id: RouteName; label: string; icon: IconName }[] = [
+  { id: 'visao-geral', label: 'Visão Geral', icon: 'grid' },
+  { id: 'pacientes', label: 'Pacientes & Vínculos', icon: 'users' },
+  { id: 'prescricao', label: 'Prescrição de Dietas', icon: 'apple' },
+  { id: 'alertas', label: 'Alertas de Desvio', icon: 'alert' },
 ];
-
-type Status =
-  { state: 'loading' } | { state: 'ok'; service: string } | { state: 'error'; message: string };
 
 export function HomePage() {
   const { logout } = useAuth();
-  const [status, setStatus] = useState<Status>({ state: 'loading' });
-  const [tab, setTab] = useState<Tab>('patients');
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
-  const tabList = useRef<HTMLElement>(null);
+  const { route, navigate } = useHashRoute();
+  const [me, setMe] = useState<Me | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState('');
   // Plano ativo que abre para edição no construtor (vindo do histórico).
   const [editing, setEditing] = useState<Plan | null>(null);
-
-  function selectTab(next: Tab) {
-    setEditing(null);
-    setTab(next);
-  }
-
-  function navigateTabs(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    const length = TABS.length;
-    const targets: Record<string, number> = {
-      ArrowLeft: (index + length - 1) % length,
-      ArrowRight: (index + 1) % length,
-      Home: 0,
-      End: length - 1,
-    };
-    if (!Object.hasOwn(targets, event.key)) return;
-    event.preventDefault();
-    const target = targets[event.key];
-    selectTab(TABS[target].id);
-    tabList.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[target]?.focus();
-  }
+  const [prescriptionView, setPrescriptionView] = useState<'builder' | 'history'>('builder');
 
   useEffect(() => {
     let cancelled = false;
-    getHealth()
-      .then((health) => {
-        if (!cancelled) setStatus({ state: 'ok', service: health.service });
+    getMe()
+      .then((data) => {
+        if (!cancelled) setMe(data);
       })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setStatus({ state: 'error', message: error instanceof Error ? error.message : 'Falha' });
-        }
+      .catch(() => {
+        // O topo só fica sem o nome: o resto do painel funciona.
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const handleSelectPatientDashboard = (patient: LinkedPatient) => {
-    setSelectedPatientId(patient.id);
-    setTab('dashboard');
-  };
+  function go(name: RouteName, params: Record<string, string | number> = {}) {
+    setMenuOpen(false);
+    if (name !== 'prescricao') setEditing(null);
+    navigate(name, params);
+  }
+
+  function onSearch(event: FormEvent) {
+    event.preventDefault();
+    go('pacientes', search.trim() ? { busca: search.trim() } : {});
+  }
+
+  const patientId = Number(route.params.get('id')) || null;
+  const current = NAV.find((item) => item.id === route.name) ?? NAV[0];
 
   return (
-    <main className="shell">
-      <header>
-        <h1>{env.appName}</h1>
-        <p>Painel do nutricionista — ambiente {env.environment}</p>
-        <button type="button" className="button button--secondary" onClick={logout}>
-          Sair
-        </button>
-      </header>
-      <nav ref={tabList} className="tabs" role="tablist" aria-label="Seções do painel">
-        {TABS.map((item, index) => (
+    <div className="app-shell">
+      <aside className={menuOpen ? 'sidebar sidebar--open' : 'sidebar'}>
+        <div className="brand">
+          <span className="brand__logo">
+            <Icon name="leaf" size={22} />
+          </span>
+          <span>
+            <strong>Nutri Vision</strong>
+            <small>Painel Clínico</small>
+          </span>
+        </div>
+        <nav aria-label="Menu do painel">
+          <ul className="sidebar__nav">
+            {NAV.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={`#/${item.id}`}
+                  className={
+                    item.id === route.name ? 'sidebar__link sidebar__link--active' : 'sidebar__link'
+                  }
+                  aria-current={item.id === route.name ? 'page' : undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    go(item.id);
+                  }}
+                >
+                  <Icon name={item.icon} />
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+
+      <div className="app-shell__main">
+        <header className="topbar">
           <button
-            key={item.id}
             type="button"
-            role="tab"
-            id={`tab-${item.id}`}
-            aria-selected={tab === item.id}
-            aria-controls={`panel-${item.id}`}
-            tabIndex={tab === item.id ? 0 : -1}
-            className={tab === item.id ? 'tabs__tab tabs__tab--active' : 'tabs__tab'}
-            onClick={() => selectTab(item.id)}
-            onKeyDown={(event) => navigateTabs(event, index)}
+            className="topbar__menu"
+            aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
           >
-            {item.label}
+            <Icon name={menuOpen ? 'close' : 'menu'} />
           </button>
-        ))}
-      </nav>
-      {TABS.map(({ id }) => (
-        <section
-          key={id}
-          role="tabpanel"
-          id={`panel-${id}`}
-          aria-labelledby={`tab-${id}`}
-          hidden={tab !== id}
-          tabIndex={tab === id ? 0 : undefined}
-        >
-          {tab === id && (
+          <form className="topbar__search" role="search" onSubmit={onSearch}>
+            <Icon name="search" />
+            <input
+              type="search"
+              aria-label="Buscar paciente"
+              placeholder="Buscar paciente por nome ou e-mail..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </form>
+          <div className="topbar__user">
+            {me ? (
+              <span className="topbar__who">
+                <strong>{me.nome}</strong>
+                {me.crn ? <small>{me.crn}</small> : null}
+              </span>
+            ) : null}
+            <Avatar name={me?.nome ?? ''} size={38} />
+            <button type="button" className="button button--secondary" onClick={logout}>
+              <Icon name="logout" size={18} />
+              Sair
+            </button>
+          </div>
+        </header>
+
+        <main className="content" aria-label={current.label}>
+          {route.name === 'visao-geral' && (
+            <DashboardPage key={patientId ?? 'todos'} initialPatientId={patientId} />
+          )}
+          {route.name === 'pacientes' && (
             <>
-              {tab === 'patients' && (
-                <PatientsPage onSelectPatientDashboard={handleSelectPatientDashboard} />
-              )}
-              {tab === 'plans' && (
-                <PlanBuilderPage key={editing?.id ?? 'new'} initialPlan={editing ?? undefined} />
-              )}
-              {tab === 'history' && (
+              <PatientsPage
+                key={route.params.get('busca') ?? ''}
+                initialQuery={route.params.get('busca') ?? ''}
+                onSelectPatientDashboard={(patient: LinkedPatient) =>
+                  go('visao-geral', { id: patient.id })
+                }
+              />
+              <LinkingCodePage />
+            </>
+          )}
+          {route.name === 'prescricao' && (
+            <section aria-label="Prescrição de dietas">
+              <div className="segmented" role="group" aria-label="Prescrição">
+                <button
+                  type="button"
+                  aria-pressed={prescriptionView === 'builder'}
+                  onClick={() => setPrescriptionView('builder')}
+                >
+                  Construtor do plano
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={prescriptionView === 'history'}
+                  onClick={() => {
+                    setEditing(null);
+                    setPrescriptionView('history');
+                  }}
+                >
+                  Histórico do plano
+                </button>
+              </div>
+              {prescriptionView === 'builder' ? (
+                <PlanBuilderPage
+                  key={editing?.id ?? `novo-${patientId ?? ''}`}
+                  initialPlan={editing ?? undefined}
+                />
+              ) : (
                 <PlanHistoryPage
                   onEdit={(plan) => {
                     setEditing(plan);
-                    setTab('plans');
-                    tabList.current?.querySelector<HTMLButtonElement>('#tab-plans')?.focus();
+                    setPrescriptionView('builder');
                   }}
                 />
               )}
-              {tab === 'dashboard' && (
-                <DashboardPage
-                  key={selectedPatientId ?? 'default'}
-                  initialPatientId={selectedPatientId}
-                />
-              )}
-              {tab === 'alerts' && <DeviationAlertsPage />}
-            </>
+            </section>
           )}
-        </section>
-      ))}
-      <ApiConnectionCard status={status} apiUrl={env.apiUrl} />
-      <LinkingCodePage />
-    </main>
+          {route.name === 'alertas' && <DeviationAlertsPage />}
+        </main>
+      </div>
+    </div>
   );
 }

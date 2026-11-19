@@ -23,11 +23,16 @@ function formatDate(iso: string | null): string {
 
 export interface PatientsPageProps {
   onSelectPatientDashboard?: (patient: LinkedPatient) => void;
+  /** Busca vinda da barra superior do painel. */
+  initialQuery?: string;
 }
 
-export function PatientsPage({ onSelectPatientDashboard }: PatientsPageProps = {}) {
-  const [search, setSearch] = useState('');
-  const [query, setQuery] = useState('');
+export function PatientsPage({
+  onSelectPatientDashboard,
+  initialQuery = '',
+}: PatientsPageProps = {}) {
+  const [search, setSearch] = useState(initialQuery);
+  const [query, setQuery] = useState(initialQuery);
   const [patients, setPatients] = useState<LinkedPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

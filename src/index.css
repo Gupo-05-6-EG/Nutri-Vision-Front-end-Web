@@ -82,22 +82,6 @@ body {
   color: var(--text);
 }
 
-.shell {
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-
-.shell header h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.75rem;
-}
-
-.shell header p {
-  margin: 0 0 2rem;
-  color: var(--muted);
-}
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -325,10 +309,6 @@ code {
   color: var(--text);
   background: transparent;
   border-color: var(--control-border);
-}
-
-.shell header .button {
-  margin: 0 0 2rem;
 }
 
 .link {
@@ -694,29 +674,6 @@ button:disabled {
 }
 
 /* ---------- Abas da área logada ---------- */
-
-.tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin: 1.5rem 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.tabs__tab {
-  padding: 0.6rem 1rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tabs__tab--active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
 
 /* ---------- Dashboards e alertas de abandono (Task 5.2) ---------- */
 
@@ -1236,4 +1193,239 @@ select:focus-visible {
 
 .muted {
   color: var(--subtle);
+}
+
+/* ---------- Layout: menu lateral e barra superior (protótipo) ------------- */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  padding: 1.5rem 1rem;
+  background: var(--surface);
+  border-right: 2px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0.5rem 2rem;
+  line-height: 1.1;
+}
+
+.brand strong {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.brand small {
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.brand__logo {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--on-vivid);
+  background: var(--vivid);
+  border-radius: 0.875rem;
+  box-shadow: 0 3px 0 var(--vivid-step);
+}
+
+.sidebar__nav {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 0.875rem;
+}
+
+.sidebar__link:hover {
+  background: var(--surface-low);
+}
+
+.sidebar__link--active,
+.sidebar__link--active:hover {
+  color: var(--on-vivid);
+  background: var(--vivid);
+  box-shadow: 0 4px 0 var(--vivid-step);
+}
+
+.app-shell__main {
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 2rem;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 2px solid var(--border);
+}
+
+.topbar__menu {
+  display: none;
+  padding: 0.5rem;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.topbar__search {
+  display: flex;
+  flex: 1 1 22rem;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 28rem;
+  padding: 0 0.85rem;
+  color: var(--subtle);
+  background: var(--surface-low);
+  border: 2px solid var(--border);
+  border-radius: 0.875rem;
+}
+
+.topbar__search input,
+.topbar__search input:focus-visible {
+  padding: 0.6rem 0;
+  background: transparent;
+  border: 0;
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.topbar__who {
+  display: grid;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.topbar__who small {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  font-weight: 900;
+  color: var(--on-vivid);
+  background: var(--vivid-soft);
+  border: 2px solid var(--vivid);
+  border-radius: 50%;
+}
+
+.content {
+  max-width: 80rem;
+  padding: 2rem;
+}
+
+.page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.9rem;
+}
+
+.page-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.3rem;
+  background: var(--surface-high);
+  border-radius: 1rem;
+}
+
+.segmented button {
+  padding: 0.5rem 1rem;
+  font-weight: 800;
+  background: transparent;
+  border: 0;
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--surface);
+  box-shadow: 0 2px 0 var(--step);
+}
+
+/* Celular e janelas estreitas: o menu vira gaveta e nada rola na horizontal. */
+@media (max-width: 56rem) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: 17rem;
+    transform: translateX(-100%);
+    transition: transform 160ms ease;
+  }
+
+  .sidebar--open {
+    transform: none;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 35%);
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+  }
+
+  .topbar__menu {
+    display: inline-grid;
+  }
+
+  .topbar__search {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .topbar__who {
+    display: none;
+  }
+
+  .content {
+    padding: 1.25rem 1rem;
+  }
 }
