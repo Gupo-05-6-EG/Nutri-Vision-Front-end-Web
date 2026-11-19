@@ -16,14 +16,12 @@ import { getMe } from '@/lib/meApi';
 import type { Me } from '@/lib/meApi';
 import { useHashRoute } from '@/lib/useHashRoute';
 import type { RouteName } from '@/lib/useHashRoute';
-import { DashboardPage } from '@/pages/DashboardPage';
 import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
 import { LinkingCodePage } from '@/pages/LinkingCodePage';
 import { OverviewPage } from '@/pages/OverviewPage';
-import { PatientsPage } from '@/pages/PatientsPage';
+import { PatientsHubPage } from '@/pages/PatientsHubPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
-import type { LinkedPatient } from '@/types/links';
 import type { Plan } from '@/types/plan';
 
 export const NAV: { id: RouteName; label: string; icon: IconName }[] = [
@@ -152,14 +150,14 @@ export function HomePage() {
           )}
           {route.name === 'pacientes' && (
             <>
-              <PatientsPage
+              <PatientsHubPage
                 key={route.params.get('busca') ?? ''}
+                selectedId={patientId}
                 initialQuery={route.params.get('busca') ?? ''}
-                onSelectPatientDashboard={(patient: LinkedPatient) =>
-                  go('pacientes', { id: patient.id })
-                }
+                onSelect={(id) => go('pacientes', id ? { id } : {})}
+                onPrescribe={(id) => go('prescricao', { id })}
+                onGenerateCode={() => go('pacientes', { convidar: 1 })}
               />
-              {patientId ? <DashboardPage key={patientId} initialPatientId={patientId} /> : null}
               <LinkingCodePage />
             </>
           )}

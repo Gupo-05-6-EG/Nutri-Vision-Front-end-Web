@@ -1588,3 +1588,251 @@ select:focus-visible {
   white-space: nowrap;
   border: 0;
 }
+
+/* ---------- Pacientes & Vínculos e ficha ----------------------------------- */
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filters__chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  font-weight: 800;
+  background: transparent;
+  border: 0;
+  border-radius: 0.875rem;
+  cursor: pointer;
+}
+
+.filters__chips button[aria-pressed='true'] {
+  background: var(--surface-low);
+  box-shadow: 0 2px 0 var(--step);
+}
+
+.filters__count {
+  padding: 0 0.45rem;
+  font-size: 0.8rem;
+  background: var(--surface-high);
+  border-radius: 999px;
+}
+
+.filters input {
+  flex: 0 1 18rem;
+}
+
+.dot--muted {
+  background: var(--subtle);
+}
+
+.hub {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.hub__cards {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.patient-card {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 0 var(--step);
+  cursor: pointer;
+}
+
+.patient-card--selected {
+  border-color: var(--vivid);
+  box-shadow: 0 4px 0 var(--vivid-step);
+}
+
+.patient-card__top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.patient-card__who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.patient-card__who small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.patient-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: var(--surface-low);
+  border-radius: 0.875rem;
+}
+
+.patient-card__stats span {
+  display: grid;
+}
+
+.hub__empty {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+}
+
+.chart {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.chart__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.chart__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 1.6rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+}
+
+.chart__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.stats__item {
+  padding: 0.85rem;
+  background: var(--surface-low);
+  border-radius: 1rem;
+}
+
+.stats__item dt {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.stats__item dd {
+  display: grid;
+  margin: 0.25rem 0 0;
+}
+
+.stats__item strong {
+  font-size: 1.25rem;
+}
+
+.chart__section {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.pvc {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.pvc__item {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.pvc__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pvc__value {
+  font-size: 1.5rem;
+}
+
+.pvc__value small {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.chart__report h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.chart__danger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border);
+}
+
+.chart .dashboard .card {
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+}
+
+@media (max-width: 70rem) {
+  .hub {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

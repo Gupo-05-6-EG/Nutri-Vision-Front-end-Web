@@ -7,6 +7,38 @@ import { detail, fakeApi, fakeJwt, json, loginResponse, nutritionist } from '@/t
 const patients = () =>
   json([{ paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' }]);
 const me = () => json(nutritionist);
+const overview = () =>
+  json({
+    indicadores: {
+      pacientes_ativos: 1,
+      pacientes_pendentes: 0,
+      alertas_criticos: 0,
+      adesao_media_pct: 80,
+      ofensiva_media_dias: 3,
+    },
+    contagens: { todos: 1, ativos: 1, em_risco: 0, pendentes: 0 },
+    total: 1,
+    pagina: 1,
+    por_pagina: 10,
+    pacientes: [
+      {
+        paciente_id: 7,
+        nome: 'Alex Silva',
+        email: 'alex@email.com',
+        status_vinculo: 'ativo',
+        vinculado_em: '2026-10-01T10:00:00Z',
+        situacao: 'ativo',
+        motivo_risco: null,
+        meta_kcal: 2000,
+        consumo_hoje_kcal: 0,
+        adesao_semanal_pct: 80,
+        ofensiva: 3,
+        xp: 100,
+        alertas_nao_lidos: 0,
+        ultimo_registro: null,
+      },
+    ],
+  });
 const consumption = () =>
   json({ paciente_id: 7, data: '2026-11-11', quantidade_refeicoes: 0, totais: {} });
 
@@ -32,6 +64,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
       'GET /alertas-desvio/regra': () =>
         json({ percentual_desvio: 20, dias_consecutivos: 2, ativo: true }),
@@ -53,7 +86,7 @@ describe('App', () => {
 
     await user.click(within(menu()).getByRole('link', { name: 'Pacientes & Vínculos' }));
     expect(window.location.hash).toBe('#/pacientes');
-    expect(await screen.findByText('Alex Silva')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Alex Silva/ })).toBeInTheDocument();
   });
 
   it('topo mostra o profissional logado e nada de depuracao', async () => {
@@ -61,6 +94,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
     });
     render(<App />);
@@ -83,6 +117,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
     });
     render(<App />);
@@ -91,8 +126,12 @@ describe('App', () => {
     await user.type(screen.getByRole('searchbox', { name: 'Buscar paciente' }), 'alex{Enter}');
 
     expect(window.location.hash).toBe('#/pacientes?busca=alex');
-    await screen.findByText('Alex Silva');
-    expect(calls.some((c) => c.path === '/patients?busca=alex')).toBe(true);
+    await screen.findByRole('button', { name: /Alex Silva/ });
+    expect(
+      calls.some(
+        (c) => c.path.startsWith('/nutricionista/visao-geral') && c.path.includes('busca=alex'),
+      ),
+    ).toBe(true);
   });
 
   it('do historico do plano, Editar plano ativo abre o construtor ja carregado', async () => {
@@ -122,6 +161,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /pacientes/7/planos/versoes': () =>
         json([{ ...plan, versao: 1, autor: { id: 10, nome: 'Dra. Ana' } }]),
     });
@@ -145,6 +185,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
     });
     render(<App />);
@@ -162,6 +203,7 @@ describe('App', () => {
       'POST /auth/login': () => loginResponse(),
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
     });
     render(<App />);
@@ -181,6 +223,7 @@ describe('App', () => {
     const { calls } = fakeApi({
       'GET /auth/me': me,
       'GET /patients': patients,
+      'GET /nutricionista/visao-geral': overview,
       'GET /refeicoes/consumo-diario': consumption,
     });
 
