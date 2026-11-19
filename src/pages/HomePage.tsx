@@ -186,6 +186,7 @@ export function HomePage() {
                 <PlanBuilderPage
                   key={editing?.id ?? `novo-${patientId ?? ''}`}
                   initialPlan={editing ?? undefined}
+                  initialPatientId={patientId}
                 />
               ) : (
                 <PlanHistoryPage

@@ -169,7 +169,7 @@ describe('App', () => {
     const user = await login();
 
     await user.click(await screen.findByRole('button', { name: 'Histórico do plano' }));
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.click(screen.getByRole('button', { name: 'Ver histórico' }));
     await user.click(await screen.findByRole('button', { name: 'Editar plano ativo' }));
 

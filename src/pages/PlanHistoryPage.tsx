@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PatientSelect } from '@/components/PatientSelect';
 import { describeError } from '@/lib/plans';
 import { diffPlans, formatDateTime, listPlanVersions } from '@/lib/planHistory';
 import type { PlanVersion } from '@/types/plan';
@@ -25,7 +26,7 @@ interface Props {
  * data/hora e o que mudou em relação à anterior. Dali o nutricionista pode
  * abrir o plano ativo para editar: salvar gera uma versão nova.
  *
- * O paciente é escolhido pelo id, como no construtor de planos.
+ * O paciente é escolhido pelo nome, como no construtor de planos.
  */
 export function PlanHistoryPage({ onEdit }: Props) {
   const [patientId, setPatientId] = useState('');
@@ -52,15 +53,7 @@ export function PlanHistoryPage({ onEdit }: Props) {
       <form className="card" onSubmit={load} noValidate>
         <h2>Histórico do plano</h2>
         <div className="row">
-          <label className="field">
-            <span>Id do paciente</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={patientId}
-              onChange={(event) => setPatientId(event.target.value.replace(/\D/g, ''))}
-            />
-          </label>
+          <PatientSelect value={patientId} onChange={setPatientId} />
           <button
             type="submit"
             className="secondary-button"

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { PatientSelect } from '@/components/PatientSelect';
 import { MealBlockEditor } from '@/components/plan/MealBlockEditor';
 import {
   type DraftErrors,
@@ -7,6 +8,9 @@ import {
   MEAL_NAME_SUGGESTIONS,
   createPlan,
   describeError,
+  discardDraft,
+  getDraft,
+  saveDraft,
   draftGoals,
   emptyDraft,
   emptyMeal,
@@ -35,12 +39,23 @@ const loadedText = (plan: Plan) =>
  * os alimentos de cada um, e prescreve o plano para o paciente: o novo plano
  * passa a ser o ativo. Também dá para partir do plano ativo atual.
  *
- * O paciente é escolhido pelo id. Com `initialPlan` (o plano ativo vindo do
+ * O paciente é escolhido pelo nome. Com `initialPlan` (o plano ativo vindo do
  * histórico de versões, Task 5.3) a tela já abre com ele para edição; salvar
- * gera uma versão nova.
+ * gera uma versão nova. O plano pode ser guardado como rascunho, que não vale
+ * para o paciente até ser prescrito.
  */
-export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
-  const [patientId, setPatientId] = useState(initialPlan ? String(initialPlan.paciente_id) : '');
+export function PlanBuilderPage({
+  initialPlan,
+  initialPatientId,
+}: { initialPlan?: Plan; initialPatientId?: number | null } = {}) {
+  const [patientId, setPatientId] = useState(
+    initialPlan
+      ? String(initialPlan.paciente_id)
+      : initialPatientId
+        ? String(initialPatientId)
+        : '',
+  );
+  const [draftFound, setDraftFound] = useState<Plan | null>(null);
   const [draft, setDraft] = useState<PlanDraft>(() =>
     initialPlan ? fromPlan(initialPlan) : emptyDraft(),
   );
@@ -48,12 +63,64 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
   const [notice, setNotice] = useState<Notice>(() =>
     initialPlan ? { kind: 'info', text: loadedText(initialPlan) } : null,
   );
-  const [busy, setBusy] = useState<'loading' | 'saving' | null>(null);
+  const [busy, setBusy] = useState<'loading' | 'saving' | 'drafting' | null>(null);
   const [saved, setSaved] = useState<Plan | null>(null);
 
   const patient = Number(patientId);
   const validPatient = Number.isInteger(patient) && patient > 0;
   const goals = draftGoals(draft);
+
+  // Ao escolher o paciente, avisa se há um rascunho guardado para ele.
+  useEffect(() => {
+    if (!validPatient) return;
+    let cancelled = false;
+    getDraft(patient)
+      .then((found) => {
+        if (!cancelled) setDraftFound(found);
+      })
+      .catch(() => {
+        // Sem rascunho legível: segue o construtor normal.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [patient, validPatient]);
+
+  const continueDraft = () => {
+    if (!draftFound) return;
+    setDraft(fromPlan(draftFound));
+    setErrors({});
+    setSaved(null);
+    setNotice({ kind: 'info', text: `Rascunho "${draftFound.titulo}" carregado.` });
+    setDraftFound(null);
+  };
+
+  const storeDraft = async () => {
+    if (!validPatient) {
+      setNotice({ kind: 'error', text: 'Escolha o paciente.' });
+      return;
+    }
+    const found = validateDraft(draft);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      setNotice({ kind: 'error', text: 'Corrija os campos destacados antes de salvar.' });
+      return;
+    }
+    setBusy('drafting');
+    setNotice(null);
+    try {
+      await saveDraft(patient, toPayload(draft));
+      setDraftFound(null);
+      setNotice({
+        kind: 'ok',
+        text: 'Rascunho salvo. Ele não vale para o paciente até você prescrever.',
+      });
+    } catch (error) {
+      setNotice({ kind: 'error', text: describeError(error) });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const update = (next: PlanDraft) => {
     setDraft(next);
@@ -88,7 +155,7 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
     const found = validateDraft(draft);
     setErrors(found);
     if (!validPatient) {
-      setNotice({ kind: 'error', text: 'Informe o id do paciente.' });
+      setNotice({ kind: 'error', text: 'Escolha o paciente.' });
       return;
     }
     if (Object.keys(found).length > 0) {
@@ -99,10 +166,13 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
     setNotice(null);
     try {
       const plan = await createPlan(patient, toPayload(draft));
+      // O rascunho deste paciente perde o sentido depois da prescrição.
+      void discardDraft(patient).catch(() => {});
+      setDraftFound(null);
       setSaved(plan);
       setNotice({
         kind: 'ok',
-        text: `Plano "${plan.titulo}" prescrito: agora é o plano ativo do paciente ${plan.paciente_id}.`,
+        text: `Plano "${plan.titulo}" prescrito: agora é o plano ativo do paciente.`,
       });
     } catch (error) {
       setNotice({ kind: 'error', text: describeError(error) });
@@ -122,18 +192,14 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
       <section className="card">
         <h2>Paciente</h2>
         <div className="row">
-          <label className="field">
-            <span>Id do paciente</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={patientId}
-              onChange={(event) => {
-                setPatientId(event.target.value.replace(/\D/g, ''));
-                setSaved(null);
-              }}
-            />
-          </label>
+          <PatientSelect
+            value={patientId}
+            onChange={(value) => {
+              setPatientId(value);
+              setSaved(null);
+              setDraftFound(null);
+            }}
+          />
           <button
             type="button"
             className="secondary-button"
@@ -143,6 +209,14 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
             {busy === 'loading' ? 'Carregando…' : 'Carregar plano ativo'}
           </button>
         </div>
+        {draftFound ? (
+          <p className="notice notice--info draft-banner" role="status">
+            Há um rascunho salvo para este paciente: &ldquo;{draftFound.titulo}&rdquo;.
+            <button type="button" className="secondary-button" onClick={continueDraft}>
+              Continuar rascunho
+            </button>
+          </p>
+        ) : null}
       </section>
 
       <section className="card">
@@ -208,12 +282,41 @@ export function PlanBuilderPage({ initialPlan }: { initialPlan?: Plan } = {}) {
         <div>
           <strong>{Math.round(goals.kcal).toLocaleString('pt-BR')} kcal</strong> ·{' '}
           <strong>{goals.protein.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g</strong>{' '}
-          de proteína por dia em {draft.meals.length}{' '}
-          {draft.meals.length === 1 ? 'refeição' : 'refeições'}
+          de proteína
+          {goals.carbs > 0 ? (
+            <>
+              {' '}
+              ·{' '}
+              <strong>
+                {goals.carbs.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g
+              </strong>{' '}
+              de carboidrato
+            </>
+          ) : null}
+          {goals.fat > 0 ? (
+            <>
+              {' '}
+              · <strong>
+                {goals.fat.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} g
+              </strong>{' '}
+              de gordura
+            </>
+          ) : null}{' '}
+          por dia em {draft.meals.length} {draft.meals.length === 1 ? 'refeição' : 'refeições'}
         </div>
-        <button type="submit" className="primary-button" disabled={busy !== null}>
-          {busy === 'saving' ? 'Prescrevendo…' : 'Prescrever plano'}
-        </button>
+        <div className="plan-summary__actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={storeDraft}
+            disabled={busy !== null}
+          >
+            {busy === 'drafting' ? 'Salvando…' : 'Salvar rascunho'}
+          </button>
+          <button type="submit" className="primary-button" disabled={busy !== null}>
+            {busy === 'saving' ? 'Prescrevendo…' : 'Prescrever plano'}
+          </button>
+        </div>
       </footer>
 
       {notice && (

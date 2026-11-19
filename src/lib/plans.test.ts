@@ -145,6 +145,8 @@ describe('toPayload', () => {
           horario: '12:30',
           meta_kcal: 650.5,
           meta_proteinas_g: 40,
+          meta_carboidratos_g: null,
+          meta_gorduras_g: null,
           observacao: null,
           alimentos: [
             { nome_alimento: arroz.nome, quantidade_g: 150, alimento_taco_id: arroz.id },
@@ -251,7 +253,21 @@ describe('estimateMeal e draftGoals', () => {
     outro.goalProtein = 'x';
     draft.meals.push(outro);
 
-    expect(draftGoals(draft)).toEqual({ kcal: 1050.5, protein: 40 });
+    expect(draftGoals(draft)).toEqual({ kcal: 1050.5, protein: 40, carbs: 0, fat: 0 });
+  });
+
+  it('metas opcionais de carboidrato e gordura vao no corpo e somam', () => {
+    const draft = validDraft();
+    draft.meals[0].goalCarbs = '80,5';
+    draft.meals[0].goalFat = '';
+
+    const payload = toPayload(draft);
+    expect(payload.refeicoes[0].meta_carboidratos_g).toBe(80.5);
+    expect(payload.refeicoes[0].meta_gorduras_g).toBeNull();
+    expect(draftGoals(draft).carbs).toBe(80.5);
+    expect(
+      validateDraft({ ...draft, meals: [{ ...draft.meals[0], goalFat: 'x' }] }),
+    ).toHaveProperty(`${draft.meals[0].key}.goalFat`);
   });
 });
 

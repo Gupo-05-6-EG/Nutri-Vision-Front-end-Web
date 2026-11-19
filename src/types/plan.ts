@@ -16,6 +16,8 @@ export interface PlanMealInput {
   horario?: string | null;
   meta_kcal: number;
   meta_proteinas_g: number;
+  meta_carboidratos_g?: number | null;
+  meta_gorduras_g?: number | null;
   observacao?: string | null;
   alimentos: PlanFoodInput[];
 }
@@ -39,6 +41,8 @@ export interface PlanMeal {
   horario: string | null;
   meta_kcal: number;
   meta_proteinas_g: number;
+  meta_carboidratos_g?: number | null;
+  meta_gorduras_g?: number | null;
   observacao: string | null;
   alimentos: PlanFood[];
 }
@@ -52,7 +56,13 @@ export interface Plan {
   ativo: boolean;
   criado_em: string;
   refeicoes: PlanMeal[];
-  totais: { meta_kcal: number; meta_proteinas_g: number };
+  totais: {
+    meta_kcal: number;
+    meta_proteinas_g: number;
+    meta_carboidratos_g?: number | null;
+    meta_gorduras_g?: number | null;
+  };
+  rascunho?: boolean;
 }
 
 /** Quem salvou uma versão do plano (Task 5.3). */

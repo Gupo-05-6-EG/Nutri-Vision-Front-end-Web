@@ -649,6 +649,7 @@ button:disabled {
 .plan-summary {
   position: sticky;
   bottom: 0.75rem;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -1886,4 +1887,25 @@ select:focus-visible {
   background: #ffffff;
   border: 2px solid var(--border);
   border-radius: 1rem;
+}
+
+/* A barra de totais fica fixa embaixo, mas o formulário reserva o espaço dela
+   para não cobrir os campos da última refeição (P6). */
+.plan-builder {
+  padding-bottom: 6rem;
+}
+
+.plan-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.draft-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
