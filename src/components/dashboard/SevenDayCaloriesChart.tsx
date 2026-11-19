@@ -42,7 +42,7 @@ export function SevenDayCaloriesChart({ days }: SevenDayCaloriesChartProps) {
             type="monotone"
             dataKey="goalKcal"
             name="Meta Calórica (kcal)"
-            stroke="#9a6700"
+            stroke="var(--orange)"
             strokeWidth={2}
             strokeDasharray="6 4"
             dot={false}
@@ -52,7 +52,7 @@ export function SevenDayCaloriesChart({ days }: SevenDayCaloriesChartProps) {
             type="monotone"
             dataKey="consumedKcal"
             name="Consumo Real (kcal)"
-            stroke="#2e7d4f"
+            stroke="var(--vivid)"
             strokeWidth={3}
             activeDot={{ r: 6 }}
             isAnimationActive={false}

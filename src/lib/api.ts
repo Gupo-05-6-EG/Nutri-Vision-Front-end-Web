@@ -79,7 +79,7 @@ export async function downloadPdf(path: string): Promise<Blob> {
   const response = await fetch(`${env.apiUrl}${path}`, { headers });
   if (!response.ok) {
     if (response.status === 401 && authToken) unauthorizedHandler?.();
-    throw new ApiError(response.status, 'Falha ao exportar relat�rio');
+    throw new ApiError(response.status, 'Falha ao exportar relatório');
   }
   if (!response.headers.get('Content-Type')?.includes('application/pdf')) {
     throw new Error('Resposta inesperada do servidor');
