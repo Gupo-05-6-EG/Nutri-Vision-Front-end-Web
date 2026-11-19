@@ -19,6 +19,7 @@ import type { RouteName } from '@/lib/useHashRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { DeviationAlertsPage } from '@/pages/DeviationAlertsPage';
 import { LinkingCodePage } from '@/pages/LinkingCodePage';
+import { OverviewPage } from '@/pages/OverviewPage';
 import { PatientsPage } from '@/pages/PatientsPage';
 import { PlanBuilderPage } from '@/pages/PlanBuilderPage';
 import { PlanHistoryPage } from '@/pages/PlanHistoryPage';
@@ -144,7 +145,10 @@ export function HomePage() {
 
         <main className="content" aria-label={current.label}>
           {route.name === 'visao-geral' && (
-            <DashboardPage key={patientId ?? 'todos'} initialPatientId={patientId} />
+            <OverviewPage
+              onOpenPatient={(id) => go('pacientes', { id })}
+              onInvite={() => go('pacientes', { convidar: 1 })}
+            />
           )}
           {route.name === 'pacientes' && (
             <>
@@ -152,9 +156,10 @@ export function HomePage() {
                 key={route.params.get('busca') ?? ''}
                 initialQuery={route.params.get('busca') ?? ''}
                 onSelectPatientDashboard={(patient: LinkedPatient) =>
-                  go('visao-geral', { id: patient.id })
+                  go('pacientes', { id: patient.id })
                 }
               />
+              {patientId ? <DashboardPage key={patientId} initialPatientId={patientId} /> : null}
               <LinkingCodePage />
             </>
           )}
