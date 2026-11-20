@@ -1,9 +1,9 @@
 import { type Page, type Route, expect, test } from '@playwright/test';
 
 /**
- * Fluxo principal do nutricionista no painel: login -> pacientes vinculados ->
- * aba do construtor de planos (busca na TACO, metas, blocos) -> prescrever para
- * o paciente -> reabrir o plano ativo. A API e simulada com estado em
+ * Fluxo principal do nutricionista no painel: login -> visao geral da carteira
+ * -> Prescricao de Dietas (paciente pelo nome, busca na TACO, metas, blocos) ->
+ * prescrever -> reabrir o plano ativo. A API e simulada com estado em
  * `http://api.test`.
  */
 
@@ -85,6 +85,52 @@ async function mockApi(page: Page): Promise<MockState> {
         expira_em: new Date(Date.now() + 86_400_000).toISOString(),
         usuario: { id: 10, nome: 'Dra. Ana', email, perfil: 'nutricionista', crn: 'CRN-3 12345' },
       });
+    }
+    if (path === '/auth/me') {
+      return reply(route, {
+        id: 10,
+        nome: 'Dra. Ana',
+        email: 'ana@exemplo.com',
+        perfil: 'nutricionista',
+        crn: 'CRN-3 12345',
+      });
+    }
+    if (path === '/nutricionista/visao-geral') {
+      return reply(route, {
+        indicadores: {
+          pacientes_ativos: 1,
+          pacientes_pendentes: 0,
+          alertas_criticos: 0,
+          adesao_media_pct: 71.4,
+          ofensiva_media_dias: 5,
+        },
+        contagens: { todos: 1, ativos: 1, em_risco: 0, pendentes: 0 },
+        total: 1,
+        pagina: 1,
+        por_pagina: 8,
+        pacientes: [
+          {
+            paciente_id: 7,
+            nome: 'Alex Silva',
+            email: 'alex@email.com',
+            status_vinculo: 'ativo',
+            vinculado_em: '2026-10-01T10:00:00Z',
+            situacao: 'ativo',
+            motivo_risco: null,
+            meta_kcal: 2000,
+            consumo_hoje_kcal: 980,
+            adesao_semanal_pct: 71.4,
+            ofensiva: 5,
+            xp: 300,
+            alertas_nao_lidos: 0,
+            ultimo_registro: { tipo: 'almoco', em: new Date().toISOString() },
+          },
+        ],
+      });
+    }
+    if (path === '/alertas-desvio') return reply(route, []);
+    if (path === '/pacientes/7/planos/rascunho') {
+      return reply(route, { detail: 'Nenhum rascunho salvo' }, 404);
     }
     if (path === '/patients') {
       return reply(route, [
@@ -173,15 +219,22 @@ test('login com senha errada mostra o erro e nao entra', async ({ page }) => {
 test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ page }) => {
   const api = await mockApi(page);
 
-  // 1. Login: abre na aba de pacientes vinculados
+  // 1. Login: abre na Visao Geral da Carteira, sem nada de depuracao
   await login(page);
+  await expect(page.getByRole('heading', { name: 'Visão Geral da Carteira' })).toBeVisible();
   await expect(page.getByText('Alex Silva')).toBeVisible();
-  await expect(page.getByText('123456')).toBeVisible();
-  await expect(page.getByText('Conectado')).toBeVisible();
-  await page.getByRole('tab', { name: 'Planos alimentares' }).click();
+  await expect(page.getByText('Dra. Ana')).toBeVisible();
+  await expect(page.getByText('Conectado')).toHaveCount(0);
+  await page
+    .getByRole('navigation', { name: 'Menu do painel' })
+    .getByRole('link', { name: 'Prescrição de Dietas' })
+    .click();
+  await expect(page).toHaveURL(/#\/prescricao$/);
 
-  // 2. Paciente sem plano ainda
-  await page.getByLabel('Id do paciente').fill('7');
+  // 2. Paciente (escolhido pelo nome) sem plano ainda
+  await page
+    .getByLabel('Paciente', { exact: true })
+    .selectOption({ label: 'Alex Silva (alex@email.com)' });
   await page.getByRole('button', { name: 'Carregar plano ativo' }).click();
   await expect(page.getByRole('status')).toHaveText('Este paciente ainda não tem plano ativo.');
 
@@ -222,7 +275,7 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
   // 5. Prescreve
   await page.getByRole('button', { name: 'Prescrever plano' }).click();
   await expect(page.getByRole('status')).toHaveText(
-    'Plano "Reeducação - fase 1" prescrito: agora é o plano ativo do paciente 7.',
+    'Plano "Reeducação - fase 1" prescrito: agora é o plano ativo do paciente.',
   );
   expect(api.posted).toEqual([
     {
@@ -234,6 +287,8 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
           horario: '07:30',
           meta_kcal: 350,
           meta_proteinas_g: 15,
+          meta_carboidratos_g: null,
+          meta_gorduras_g: null,
           observacao: null,
           alimentos: [
             { nome_alimento: 'Feijão, carioca, cozido', quantidade_g: 100, alimento_taco_id: 556 },
@@ -244,6 +299,8 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
           horario: '12:30',
           meta_kcal: 650,
           meta_proteinas_g: 45.5,
+          meta_carboidratos_g: null,
+          meta_gorduras_g: null,
           observacao: null,
           alimentos: [
             { nome_alimento: 'Arroz, tipo 1, cozido', quantidade_g: 150, alimento_taco_id: 3 },
@@ -271,9 +328,9 @@ test('nutricionista monta, prescreve e reabre o plano do paciente', async ({ pag
   await expect(almoco.getByLabel('Horário')).toHaveValue('12:30');
   await expect(almoco.getByRole('combobox', { name: 'Alimento' })).toHaveCount(2);
 
-  // 7. A sessao sobrevive ao recarregar a pagina e Sair encerra
+  // 7. A sessao e a secao sobrevivem ao recarregar a pagina e Sair encerra
   await page.reload();
-  await expect(page.getByText('Alex Silva')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Construtor do plano' })).toBeVisible();
   await expect(loginHeading(page)).toBeHidden();
   await page.getByRole('button', { name: 'Sair' }).click();
   await expect(loginHeading(page)).toBeVisible();

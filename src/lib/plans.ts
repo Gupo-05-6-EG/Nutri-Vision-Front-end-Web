@@ -41,6 +41,9 @@ export interface MealDraft {
   time: string;
   goalKcal: string;
   goalProtein: string;
+  /** Opcionais: vazio = sem meta de carboidrato/gordura neste bloco. */
+  goalCarbs: string;
+  goalFat: string;
   note: string;
   foods: FoodDraft[];
 }
@@ -71,6 +74,8 @@ export const emptyMeal = (name = ''): MealDraft => ({
   time: '',
   goalKcal: '',
   goalProtein: '',
+  goalCarbs: '',
+  goalFat: '',
   note: '',
   foods: [emptyFood()],
 });
@@ -126,6 +131,14 @@ export function validateDraft(draft: PlanDraft): DraftErrors {
       max: LIMITS.goalProtein,
       allowZero: true,
     });
+    for (const field of ['goalCarbs', 'goalFat'] as const) {
+      if (meal[field].trim()) {
+        checkNumber(errors, `${meal.key}.${field}`, meal[field], {
+          max: LIMITS.goalProtein * 2,
+          allowZero: true,
+        });
+      }
+    }
     if (meal.foods.length === 0) errors[`${meal.key}.foods`] = 'Adicione pelo menos um alimento.';
     if (meal.foods.length > LIMITS.foodsPerMeal)
       errors[`${meal.key}.foods`] = `No máximo ${LIMITS.foodsPerMeal} alimentos.`;
@@ -154,6 +167,8 @@ export function toPayload(draft: PlanDraft): PlanInput {
       horario: meal.time || null,
       meta_kcal: twoDecimals(meal.goalKcal),
       meta_proteinas_g: twoDecimals(meal.goalProtein),
+      meta_carboidratos_g: meal.goalCarbs.trim() ? twoDecimals(meal.goalCarbs) : null,
+      meta_gorduras_g: meal.goalFat.trim() ? twoDecimals(meal.goalFat) : null,
       observacao: optional(meal.note),
       alimentos: meal.foods.map((food) => ({
         nome_alimento: food.name.trim(),
@@ -177,6 +192,8 @@ export function fromPlan(plan: Plan): PlanDraft {
       time: meal.horario?.slice(0, 5) ?? '',
       goalKcal: formatNumber(meal.meta_kcal),
       goalProtein: formatNumber(meal.meta_proteinas_g),
+      goalCarbs: meal.meta_carboidratos_g == null ? '' : formatNumber(meal.meta_carboidratos_g),
+      goalFat: meal.meta_gorduras_g == null ? '' : formatNumber(meal.meta_gorduras_g),
       note: meal.observacao ?? '',
       foods: meal.alimentos.map((food) => ({
         key: newKey(),
@@ -212,13 +229,23 @@ export function estimateMeal(meal: MealDraft): Estimate {
 }
 
 /** Soma das metas válidas dos blocos (o que o back-end devolve em `totais`). */
-export function draftGoals(draft: PlanDraft): { kcal: number; protein: number } {
-  const sum = (field: 'goalKcal' | 'goalProtein') =>
+export function draftGoals(draft: PlanDraft): {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+} {
+  const sum = (field: 'goalKcal' | 'goalProtein' | 'goalCarbs' | 'goalFat') =>
     draft.meals.reduce((total, meal) => {
       const value = parseNumber(meal[field]);
       return Number.isNaN(value) ? total : total + value;
     }, 0);
-  return { kcal: sum('goalKcal'), protein: sum('goalProtein') };
+  return {
+    kcal: sum('goalKcal'),
+    protein: sum('goalProtein'),
+    carbs: sum('goalCarbs'),
+    fat: sum('goalFat'),
+  };
 }
 
 /** `detail` do FastAPI quando vier, senão a mensagem do erro. */
@@ -252,3 +279,24 @@ export async function getActivePlan(patientId: number): Promise<Plan | null> {
 
 export const searchTaco = (name: string) =>
   api.get<TacoFood[]>(`/alimentos-taco?nome=${encodeURIComponent(name)}&limite=8`);
+
+/** Rascunho salvo do plano (BE-12), ou `null` se não houver. */
+export async function getDraft(patientId: number): Promise<Plan | null> {
+  try {
+    return await api.get<Plan>(`/pacientes/${patientId}/planos/rascunho`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export const saveDraft = (patientId: number, plan: PlanInput) =>
+  api.put<Plan>(`/pacientes/${patientId}/planos/rascunho`, plan);
+
+export async function discardDraft(patientId: number): Promise<void> {
+  try {
+    await api.delete(`/pacientes/${patientId}/planos/rascunho`);
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 404)) throw error;
+  }
+}

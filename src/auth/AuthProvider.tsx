@@ -42,15 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [endSession]);
 
-  const startSession = useCallback((token: string) => {
-    tokenStorage.set(token);
+  const startSession = useCallback((token: string, remember = true) => {
+    tokenStorage.set(token, remember);
     setAuthToken(token);
     setState({ status: 'authenticated', notice: null });
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      startSession(await requestLogin(email, password));
+    async (email: string, password: string, remember = true) => {
+      startSession(await requestLogin(email, password), remember);
     },
     [startSession],
   );

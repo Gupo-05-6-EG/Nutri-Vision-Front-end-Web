@@ -18,6 +18,8 @@ import type { LinkedPatient } from '@/types/links';
 export interface DashboardPageProps {
   initialPatientId?: number | null;
   referenceDate?: Date;
+  /** Dentro da ficha do paciente: o paciente já está escolhido. */
+  hidePatientSelect?: boolean;
 }
 
 type PatientsState =
@@ -31,7 +33,11 @@ type DashboardState =
   | { status: 'error'; message: string }
   | { status: 'ready'; data: PatientDashboardData };
 
-export function DashboardPage({ initialPatientId = null, referenceDate }: DashboardPageProps = {}) {
+export function DashboardPage({
+  initialPatientId = null,
+  referenceDate,
+  hidePatientSelect = false,
+}: DashboardPageProps = {}) {
   const [patientsState, setPatientsState] = useState<PatientsState>({ status: 'loading' });
   const [selectedId, setSelectedId] = useState<number | null>(initialPatientId);
   const [dashboardState, setDashboardState] = useState<DashboardState>({ status: 'idle' });
@@ -103,7 +109,7 @@ export function DashboardPage({ initialPatientId = null, referenceDate }: Dashbo
           <p className="patients__empty">Nenhum paciente vinculado para visualizar o dashboard.</p>
         )}
 
-        {patients.length > 0 && (
+        {patients.length > 0 && !hidePatientSelect && (
           <div className="field">
             <label htmlFor="dashboard-patient-select">Paciente</label>
             <select

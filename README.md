@@ -34,18 +34,33 @@ O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app
 
 ### Login e cadastro (Task 1.2)
 
-`src/auth/AuthProvider.tsx`: o token fica no `localStorage` e é injetado em todas as
-chamadas; um 401 com sessão aberta volta para o login com o aviso de sessão expirada.
+`src/auth/AuthProvider.tsx`: com **Lembrar de mim** o token fica no `localStorage`
+(sem, no `sessionStorage`, até fechar a aba) e é injetado em todas as chamadas; um
+401 com sessão aberta volta para o login com o aviso de sessão expirada.
 
-Depois de entrar, a home tem quatro abas: **Pacientes** (vínculos e alertas de abandono,
-Tasks 1.5 e 5.2), **Planos alimentares** (Task 5.1), **Histórico do plano** (Task 5.3)
-e **Dashboards** (Task 5.2).
+### Layout (protótipo)
+
+Depois de entrar, o painel tem o **menu lateral** e a **barra superior** do protótipo
+(`src/pages/HomePage.tsx`), com a identidade visual dele (paleta, Nunito, cartões e
+botões com "degrau", em `src/index.css`). A seção fica no hash da URL (`#/pacientes`),
+então voltar e recarregar mantêm o lugar:
+
+| Seção | O que tem |
+|---|---|
+| **Visão Geral** (`OverviewPage`) | indicadores da carteira (ativos, alertas críticos, adesão média, ofensiva média), tabela de monitoramento com paginação e **Exportar** em CSV (`GET /nutricionista/visao-geral`) |
+| **Pacientes & Vínculos** (`PatientsHubPage`, `PatientChart`) | filtros Todos/Ativos/Em risco/Pendentes, cartões dos pacientes e a **ficha**: triagem (peso, IMC, TMB, nível), planejado × consumido de hoje, gráfico de 7 dias, relatório PDF, **Incentivo (+10 XP)**, ajustar prescrição e desvincular |
+| **Prescrição de Dietas** | construtor e histórico do plano (abaixo) |
+| **Alertas de Desvio** | regra e leitura dos alertas (Task 5.4) |
+
+Na barra superior: busca de paciente, **sino** (alertas não lidos e vínculos pendentes,
+atualizado a cada minuto), nome e CRN do profissional e Sair. O **código de vínculo**
+só é gerado quando o nutricionista pede (Gerar Código de Vínculo / Convidar Paciente) e
+vem também em **QR Code** (`nutrivision://vinculo?codigo=...`), que o app escaneia.
 
 ### Dashboards e alertas de abandono (Task 5.2, RF07.1, RF10.1)
 
-- **Alerta de abandono (`src/pages/PatientsPage.tsx`, `src/lib/linksApi.ts`)**: exibe um
-  ícone e selo vermelho de advertência (`Alerta de abandono`) na lista de pacientes e no
-  dashboard quando `streak === 0` por 3 ou mais dias consecutivos (`dias_streak_zero >= 3`
+- **Alerta de abandono (`src/lib/linksApi.ts`)**: exibe o aviso vermelho
+  (`Alerta de abandono`) no dashboard da ficha do paciente quando `streak === 0` por 3 ou mais dias consecutivos (`dias_streak_zero >= 3`
   ou `alerta_abandono = true`).
 - **Gráfico de 7 dias (`src/pages/DashboardPage.tsx`, `src/components/dashboard/SevenDayCaloriesChart.tsx`)**:
   utiliza **Recharts** (`LineChart`) para comparar a **Linha de Meta Calórica** (fixa, a partir
@@ -57,22 +72,25 @@ e **Dashboards** (Task 5.2).
 
 `src/pages/PlanBuilderPage.tsx`. O nutricionista:
 
-1. informa o **id do paciente** e,
-   se quiser, carrega o plano ativo dele para partir dele;
+1. escolhe o **paciente pelo nome** e, se quiser, carrega o plano ativo dele ou
+   continua o **rascunho** salvo;
 2. dá título e orientações gerais ao plano;
 3. monta os **blocos de refeição**: nome (com sugestões: café da manhã, ceia...),
-   horário, **meta de kcal** e **meta de proteínas**, e a **lista de alimentos** com
+   horário, **meta de kcal**, **meta de proteínas** e, opcionais, as metas de
+   **carboidrato** e **gordura**, e a **lista de alimentos** com
    gramas. O alimento pode vir da busca na TACO (selo `TACO`, entra como
    `alimento_taco_id`) ou ser digitado livre;
 4. reordena/remove blocos e vê, por bloco, a estimativa de kcal e proteínas dos
    alimentos escolhidos da TACO contra a meta, e no rodapé as metas do dia;
 5. clica em **Prescrever plano** (`POST /pacientes/{id}/planos`): o plano novo vira o
-   ativo e substitui o anterior.
+   ativo e substitui o anterior. **Salvar rascunho**
+   (`PUT /pacientes/{id}/planos/rascunho`) guarda o plano sem que ele valha para o
+   paciente.
 
 ### Histórico de versões do plano (Task 5.3, RF08, RNF08)
 
-`src/pages/PlanHistoryPage.tsx` (aba **Histórico do plano**). O nutricionista informa o
-id do paciente e vê, da mais nova para a mais antiga, cada versão salva do plano com o
+`src/pages/PlanHistoryPage.tsx` (**Prescrição de Dietas → Histórico do plano**). O
+nutricionista escolhe o paciente e vê, da mais nova para a mais antiga, cada versão salva do plano com o
 **autor**, a **data/hora** (horário de Brasília) e **o que mudou** em relação à versão
 anterior (título, orientações, refeições adicionadas/removidas, horário, metas e
 alimentos). **Editar plano ativo** abre o construtor já com o plano carregado; salvar
@@ -138,13 +156,13 @@ do fluxo principal no Chromium.
   teste depende do back-end no ar.
 - **E2E** (`e2e/`): Playwright contra o build de produção (`vite preview`), com
   a API interceptada no navegador. São dois fluxos:
-  - [`fluxo-principal.spec.ts`](e2e/fluxo-principal.spec.ts): login → pacientes
-    vinculados → construtor de planos (busca na TACO, metas, blocos) →
+  - [`fluxo-principal.spec.ts`](e2e/fluxo-principal.spec.ts): login → Visão Geral →
+    Prescrição de Dietas (paciente pelo nome, busca na TACO, metas, blocos) →
     prescrever → reabrir o plano ativo → recarregar a página → sair.
-  - [`acompanhamento.spec.ts`](e2e/acompanhamento.spec.ts): "Ver desempenho" →
-    dashboard de 7 dias (resumo, tabela, gráfico e alerta de abandono) → troca
-    de paciente → alertas de desvio (regra, verificação, marcar como lido e
-    filtro de não lidos).
+  - [`acompanhamento.spec.ts`](e2e/acompanhamento.spec.ts): "Ver Ficha" na Visão
+    Geral → ficha com o dashboard de 7 dias (resumo, tabela, gráfico e alerta de
+    abandono) → troca de paciente → Alertas de Desvio (regra, verificação, marcar
+    como lido e filtro de não lidos).
 - Dashboards e alertas também têm testes de componente (`DashboardPage`,
   `SevenDayCaloriesChart`, `DeviationAlertsPage`) e do cliente da API
   (`deviationAlertsApi`).

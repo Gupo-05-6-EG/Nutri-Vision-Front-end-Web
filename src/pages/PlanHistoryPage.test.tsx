@@ -59,10 +59,17 @@ async function open(
   routes: Parameters<typeof fakeApi>[0],
   onEdit: (plan: PlanVersion) => void = () => {},
 ) {
-  const api = fakeApi(routes);
+  const api = fakeApi({
+    'GET /patients': () =>
+      json([
+        { paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' },
+        { paciente_id: 8, nome: 'Bia Souza', email: 'bia@email.com', status: 'ativo' },
+      ]),
+    ...routes,
+  });
   render(<PlanHistoryPage onEdit={onEdit} />);
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText('Id do paciente'), '7');
+  await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
   await user.click(screen.getByRole('button', { name: 'Ver histórico' }));
   return { user, ...api };
 }
@@ -71,18 +78,24 @@ const version = (n: number) => screen.getByRole('heading', { name: `Versão ${n}
 
 describe('PlanHistoryPage', () => {
   it('só busca depois de informar um paciente válido', () => {
-    const { calls } = fakeApi({});
+    const { calls } = fakeApi({
+      'GET /patients': () =>
+        json([
+          { paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' },
+          { paciente_id: 8, nome: 'Bia Souza', email: 'bia@email.com', status: 'ativo' },
+        ]),
+    });
     render(<PlanHistoryPage onEdit={() => {}} />);
 
     expect(screen.getByRole('button', { name: 'Ver histórico' })).toBeDisabled();
-    expect(calls).toHaveLength(0);
+    expect(calls.filter((c) => c.path.includes('/planos'))).toHaveLength(0);
   });
 
   it('lista as versões da mais nova para a mais antiga, com autor e data/hora', async () => {
     const { calls } = await open({ 'GET /pacientes/7/planos/versoes': () => json([v2, v1]) });
 
     await screen.findByText('Versão 2');
-    expect(calls[0].path).toBe('/pacientes/7/planos/versoes');
+    expect(calls.find((c) => c.path.includes('/planos'))?.path).toBe('/pacientes/7/planos/versoes');
     expect(screen.getByText('2 versões')).toBeInTheDocument();
     const headings = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(headings).toEqual(['Versão 2', 'Versão 1']);

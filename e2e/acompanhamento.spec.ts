@@ -2,9 +2,9 @@ import { type Page, type Route, expect, test } from '@playwright/test';
 
 /**
  * Fluxo de acompanhamento do nutricionista (Task 7.4, parte 4/4): login ->
- * pacientes vinculados -> dashboard de 7 dias (meta x consumo e alerta de
- * abandono, Task 5.2) -> painel de alertas de desvio (regra, verificação e
- * leitura, Task 5.4). A API é simulada com estado em `http://api.test`.
+ * Pacientes & Vínculos -> ficha do paciente com o dashboard de 7 dias (meta x
+ * consumo e alerta de abandono, Task 5.2) -> Alertas de Desvio (regra,
+ * verificação e leitura, Task 5.4). A API é simulada com estado em `http://api.test`.
  */
 
 const API = 'http://api.test/api/v1';
@@ -106,6 +106,80 @@ async function mockApi(page: Page): Promise<MockState> {
         usuario: { id: 10, nome: 'Dra. Ana', email: 'ana@exemplo.com', perfil: 'nutricionista' },
       });
     }
+    if (path === '/auth/me') {
+      return reply(route, {
+        id: 10,
+        nome: 'Dra. Ana',
+        email: 'ana@exemplo.com',
+        perfil: 'nutricionista',
+        crn: 'CRN-3 12345',
+      });
+    }
+    if (path === '/nutricionista/visao-geral') {
+      const monitorado = (id: number, nome: string, email: string, ofensiva: number) => ({
+        paciente_id: id,
+        nome,
+        email,
+        status_vinculo: 'ativo',
+        vinculado_em: '2026-10-01T10:00:00Z',
+        situacao: id === 8 ? 'em_risco' : 'ativo',
+        motivo_risco: id === 8 ? 'sem_registro' : null,
+        meta_kcal: META_KCAL,
+        consumo_hoje_kcal: id === 8 ? 0 : 2000,
+        adesao_semanal_pct: id === 8 ? 28.6 : 100,
+        ofensiva,
+        xp: 100,
+        alertas_nao_lidos: 0,
+        ultimo_registro: null,
+      });
+      const pendentes = url.searchParams.get('status') === 'pendentes';
+      return reply(route, {
+        indicadores: {
+          pacientes_ativos: 2,
+          pacientes_pendentes: 0,
+          alertas_criticos: 1,
+          adesao_media_pct: 64.3,
+          ofensiva_media_dias: 6,
+        },
+        contagens: { todos: 2, ativos: 2, em_risco: 1, pendentes: 0 },
+        total: pendentes ? 0 : 2,
+        pagina: 1,
+        por_pagina: 100,
+        pacientes: pendentes
+          ? []
+          : [
+              monitorado(7, 'Alex Silva', 'alex@email.com', 12),
+              monitorado(8, 'Bia Souza', 'bia@email.com', 0),
+            ],
+      });
+    }
+    const perfil = path.match(/^\/pacientes\/(\d+)\/perfil$/);
+    if (perfil) {
+      return reply(route, {
+        paciente_id: Number(perfil[1]),
+        nome: perfil[1] === '8' ? 'Bia Souza' : 'Alex Silva',
+        email: 'x@email.com',
+        membro_desde: '2026-10-01T10:00:00Z',
+        idade: 30,
+        genero: 'feminino',
+        peso_kg: 64.5,
+        altura_cm: 165,
+        imc: 23.7,
+        classificacao_imc: 'Eutrófico',
+        tmb_kcal: 1442,
+        nivel_atividade: 'moderado',
+        fator_atividade: 1.55,
+        meta: {
+          kcal: META_KCAL,
+          proteinas_g: 90,
+          carboidratos_g: 250,
+          gorduras_g: 66.7,
+          origem: 'plano',
+        },
+        gamificacao: { xp: 100, ofensiva: 0, divisao: 'Bronze', refeicoes_registradas: 10 },
+        plano_ativo: null,
+      });
+    }
     if (path === '/patients') {
       return reply(route, [
         {
@@ -191,7 +265,9 @@ async function login(page: Page) {
   await expect(page.getByText('Bia Souza')).toBeVisible();
 }
 
-const seletor = (page: Page) => page.getByLabel('Paciente', { exact: true });
+const menu = (page: Page) => page.getByRole('navigation', { name: 'Menu do painel' });
+const cartao = (page: Page, nome: string) =>
+  page.locator('.patient-card').filter({ hasText: nome });
 const abandono = (page: Page) => page.getByRole('alert').filter({ hasText: 'Alerta de abandono' });
 const tabelaDias = (page: Page) =>
   page.getByRole('table', { name: 'Tabela de consumo dos últimos 7 dias' });
@@ -202,17 +278,11 @@ test('dashboard de 7 dias destaca o paciente em abandono', async ({ page }) => {
   const api = await mockApi(page);
   await login(page);
 
-  // 1. "Ver desempenho" da Bia abre o dashboard já com ela selecionada
-  await page
-    .getByRole('listitem')
-    .filter({ hasText: 'Bia Souza' })
-    .getByRole('button', { name: 'Ver desempenho' })
-    .click();
-  await expect(page.getByRole('tab', { name: 'Dashboards' })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
-  await expect(seletor(page)).toHaveValue('8');
+  // 1. "Ver Ficha" da Bia na Visao Geral abre a ficha dela em Pacientes & Vinculos
+  await page.getByRole('button', { name: 'Ver ficha de Bia Souza' }).click();
+  await expect(page).toHaveURL(/#\/pacientes\?id=8$/);
+  await expect(cartao(page, 'Bia Souza')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: /Bia Souza/ })).toBeVisible();
 
   // 2. Alerta vermelho de abandono (streak zerado há 3 dias)
   await expect(abandono(page)).toContainText('Bia Souza está com ofensiva zerada');
@@ -240,19 +310,16 @@ test('dashboard de 7 dias destaca o paciente em abandono', async ({ page }) => {
   );
 
   // 4. Trocar para um paciente em dia remove o alerta
-  await seletor(page).selectOption('7');
+  await cartao(page, 'Alex Silva').click();
   await expect(metrica(page, 'Plano ativo')).toHaveText('Manutenção');
   await expect(metrica(page, 'Dias dentro da meta')).toHaveText('7 de 7 dias');
   await expect(abandono(page)).toBeHidden();
-  await expect(seletor(page).locator('option', { hasText: 'Bia' })).toHaveText(
-    /Alerta de abandono/,
-  );
 });
 
 test('nutricionista ajusta a regra, verifica e lê os alertas de desvio', async ({ page }) => {
   const api = await mockApi(page);
   await login(page);
-  await page.getByRole('tab', { name: 'Alertas de desvio' }).click();
+  await menu(page).getByRole('link', { name: 'Alertas de Desvio' }).click();
 
   // 1. Um alerta não lido já existe: aviso no topo e item marcado como novo
   const aviso = page.locator('.deviation-banner');

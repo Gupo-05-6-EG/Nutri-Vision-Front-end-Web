@@ -135,6 +135,40 @@ export function MealBlockEditor({ meal, index, total, errors, onChange, onMove, 
             </small>
           )}
         </label>
+
+        <label className="field">
+          <span>Meta de carboidratos (g)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={meal.goalCarbs}
+            aria-invalid={Boolean(error('goalCarbs'))}
+            aria-describedby={error('goalCarbs') ? errorId(meal.key, 'goalCarbs') : undefined}
+            onChange={(event) => set({ goalCarbs: event.target.value })}
+          />
+          {error('goalCarbs') && (
+            <small className="field__error" id={errorId(meal.key, 'goalCarbs')}>
+              {error('goalCarbs')}
+            </small>
+          )}
+        </label>
+
+        <label className="field">
+          <span>Meta de gorduras (g)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={meal.goalFat}
+            aria-invalid={Boolean(error('goalFat'))}
+            aria-describedby={error('goalFat') ? errorId(meal.key, 'goalFat') : undefined}
+            onChange={(event) => set({ goalFat: event.target.value })}
+          />
+          {error('goalFat') && (
+            <small className="field__error" id={errorId(meal.key, 'goalFat')}>
+              {error('goalFat')}
+            </small>
+          )}
+        </label>
       </div>
 
       <h3 className="meal-block__subtitle">Alimentos</h3>

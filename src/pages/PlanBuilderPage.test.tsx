@@ -55,6 +55,11 @@ const meal = (n: number) => within(screen.getByRole('group', { name: `Refeição
 
 function setup(routes: Parameters<typeof fakeApi>[0] = {}) {
   const api = fakeApi({
+    'GET /patients': () =>
+      json([
+        { paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' },
+        { paciente_id: 8, nome: 'Bia Souza', email: 'bia@email.com', status: 'ativo' },
+      ]),
     'GET /alimentos-taco': (call) =>
       json([arroz, frango].filter((f) => f.nome.toLowerCase().includes(searchTerm(call)))),
     ...routes,
@@ -79,7 +84,7 @@ async function fillMeal(user: UserEvent, n: number, food = 'arroz', grams = '150
 describe('PlanBuilderPage - validacao', () => {
   it('prescrever vazio aponta os campos sem chamar a API', async () => {
     const { user, calls } = setup();
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
 
     await user.click(screen.getByRole('button', { name: 'Prescrever plano' }));
 
@@ -93,17 +98,20 @@ describe('PlanBuilderPage - validacao', () => {
     expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
   });
 
-  it('exige o id do paciente', async () => {
+  it('exige escolher o paciente', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Prescrever plano' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Informe o id do paciente.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Escolha o paciente.');
   });
 
-  it('id do paciente aceita so digitos', async () => {
+  it('paciente e escolhido pelo nome, nao pelo id', async () => {
     const { user } = setup();
-    const input = screen.getByLabelText('Id do paciente');
-    await user.type(input, 'a1b2-3');
-    expect(input).toHaveValue('123');
+    const select = await screen.findByLabelText('Paciente');
+    expect(
+      await screen.findByRole('option', { name: 'Alex Silva (alex@email.com)' }),
+    ).toBeInTheDocument();
+    await user.selectOptions(select, '8');
+    expect(select).toHaveValue('8');
   });
 
   it('depois da primeira tentativa, corrigir o campo tira o erro', async () => {
@@ -208,7 +216,7 @@ describe('PlanBuilderPage - prescrever', () => {
     const { user, calls } = setup({
       'POST /pacientes/7/planos': (call) => json(savedPlan(call), 201),
     });
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.type(screen.getByLabelText(/^Título/), 'Reeducação - fase 1');
     await user.type(screen.getByLabelText('Orientações gerais'), 'Beber água');
     await fillMeal(user, 1, 'arroz', '120,5');
@@ -217,7 +225,7 @@ describe('PlanBuilderPage - prescrever', () => {
     await user.click(screen.getByRole('button', { name: 'Prescrever plano' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Plano "Reeducação - fase 1" prescrito: agora é o plano ativo do paciente 7.',
+      'Plano "Reeducação - fase 1" prescrito: agora é o plano ativo do paciente.',
     );
     const post = calls.find((c) => c.method === 'POST')!;
     expect(post.path).toBe('/pacientes/7/planos');
@@ -230,6 +238,8 @@ describe('PlanBuilderPage - prescrever', () => {
           horario: '07:30',
           meta_kcal: 600,
           meta_proteinas_g: 35.5,
+          meta_carboidratos_g: null,
+          meta_gorduras_g: null,
           observacao: null,
           alimentos: [{ nome_alimento: arroz.nome, quantidade_g: 120.5, alimento_taco_id: 3 }],
         },
@@ -243,7 +253,7 @@ describe('PlanBuilderPage - prescrever', () => {
 
   it('Enter no campo de alimento nao envia o plano pela metade', async () => {
     const { user, calls } = setup();
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.type(meal(1).getByRole('combobox', { name: 'Alimento' }), 'Banana{Enter}');
 
     expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
@@ -254,7 +264,7 @@ describe('PlanBuilderPage - prescrever', () => {
     const { user } = setup({
       'POST /pacientes/7/planos': () => detail('Paciente nao vinculado a este nutricionista', 403),
     });
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.type(screen.getByLabelText(/^Título/), 'Plano');
     await fillMeal(user, 1);
 
@@ -271,7 +281,7 @@ describe('PlanBuilderPage - prescrever', () => {
     const { user } = setup({
       'POST /pacientes/7/planos': () => new Promise<Response>((resolve) => (respond = resolve)),
     });
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.type(screen.getByLabelText(/^Título/), 'Plano');
     await fillMeal(user, 1);
 
@@ -287,7 +297,7 @@ describe('PlanBuilderPage - plano ativo', () => {
   it('carrega o plano ativo para editar', async () => {
     const { user } = setup({ 'GET /pacientes/7/planos/ativo': () => json(activePlan) });
     expect(screen.getByRole('button', { name: 'Carregar plano ativo' })).toBeDisabled();
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
 
     await user.click(screen.getByRole('button', { name: 'Carregar plano ativo' }));
 
@@ -306,7 +316,7 @@ describe('PlanBuilderPage - plano ativo', () => {
     const { user } = setup({
       'GET /pacientes/7/planos/ativo': () => detail('Paciente sem plano ativo', 404),
     });
-    await user.type(screen.getByLabelText('Id do paciente'), '7');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
     await user.click(screen.getByRole('button', { name: 'Carregar plano ativo' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -319,22 +329,52 @@ describe('PlanBuilderPage - plano ativo', () => {
     const { user } = setup({
       'GET /pacientes/8/planos/ativo': () => detail('Paciente nao encontrado', 404),
     });
-    await user.type(screen.getByLabelText('Id do paciente'), '8');
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '8');
     await user.click(screen.getByRole('button', { name: 'Carregar plano ativo' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Paciente nao encontrado');
   });
 
-  it('com initialPlan já abre o plano para editar, sem chamar a API', () => {
-    const { calls } = fakeApi({});
+  it('com initialPlan já abre o plano para editar, sem chamar a API', async () => {
+    const { calls } = fakeApi({
+      'GET /patients': () =>
+        json([{ paciente_id: 7, nome: 'Alex Silva', email: 'alex@email.com', status: 'ativo' }]),
+    });
     render(<PlanBuilderPage initialPlan={activePlan} />);
 
     expect(screen.getByLabelText(/^Título/)).toHaveValue('Plano de outubro');
-    expect(screen.getByLabelText('Id do paciente')).toHaveValue('7');
+    expect(
+      await screen.findByRole('option', { name: 'Alex Silva (alex@email.com)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Paciente')).toHaveValue('7');
     expect(screen.getByRole('status')).toHaveTextContent(
       'Plano ativo "Plano de outubro" carregado. Ao prescrever, ele é substituído.',
     );
     expect(meal(2).getByRole('combobox', { name: 'Alimento' })).toHaveValue('Sopa');
-    expect(calls).toHaveLength(0);
+    // So a lista de pacientes e a consulta do rascunho: o plano ja veio pronto.
+    expect(calls.filter((c) => c.path.includes('/planos/ativo'))).toHaveLength(0);
+  });
+});
+
+describe('PlanBuilderPage - rascunho', () => {
+  it('salva o rascunho sem prescrever e avisa quando ha um salvo', async () => {
+    const draftPlan = { ...activePlan, id: 40, titulo: 'Rascunho de dezembro', ativo: false };
+    const { user, calls } = setup({
+      'PUT /pacientes/7/planos/rascunho': () => json(draftPlan),
+      'GET /pacientes/7/planos/rascunho': () => json(draftPlan),
+    });
+
+    await user.selectOptions(await screen.findByLabelText('Paciente'), '7');
+    expect(await screen.findByText(/Há um rascunho salvo/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continuar rascunho' }));
+    expect(screen.getByLabelText(/^Título/)).toHaveValue('Rascunho de dezembro');
+
+    await user.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Rascunho salvo.');
+    expect(calls.some((c) => c.method === 'PUT' && c.path === '/pacientes/7/planos/rascunho')).toBe(
+      true,
+    );
+    expect(calls.some((c) => c.method === 'POST')).toBe(false);
   });
 });
