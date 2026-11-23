@@ -8,9 +8,18 @@
 import { env } from '@/lib/env';
 
 let authToken: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
+}
+
+/**
+ * Chamado quando a API responde 401 *com um token em uso* (sessão expirada ou
+ * invalidada). Não dispara em 401 sem token (ex.: senha errada no login).
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
 }
 
 export class ApiError extends Error {
@@ -32,11 +41,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${env.apiUrl}${path}`, { ...init, headers });
 
   if (!response.ok) {
+    if (response.status === 401 && authToken) unauthorizedHandler?.();
     const detail = await response.text().catch(() => '');
     throw new ApiError(response.status, detail || `HTTP ${response.status}`);
   }
 
-  return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+  // 204 e respostas sem corpo (ex.: 201 do cadastro) não têm JSON para ler.
+  const text = response.status === 204 ? '' : await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {
@@ -45,6 +57,11 @@ export const api = {
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
+  patch: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'PATCH',
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };
 
@@ -55,3 +72,17 @@ export interface HealthResponse {
 }
 
 export const getHealth = () => api.get<HealthResponse>('/health');
+
+export async function downloadPdf(path: string): Promise<Blob> {
+  const headers = new Headers({ Accept: 'application/pdf' });
+  if (authToken) headers.set('Authorization', `Bearer ${authToken}`);
+  const response = await fetch(`${env.apiUrl}${path}`, { headers });
+  if (!response.ok) {
+    if (response.status === 401 && authToken) unauthorizedHandler?.();
+    throw new ApiError(response.status, 'Falha ao exportar relatório');
+  }
+  if (!response.headers.get('Content-Type')?.includes('application/pdf')) {
+    throw new Error('Resposta inesperada do servidor');
+  }
+  return response.blob();
+}

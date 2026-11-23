@@ -18,15 +18,97 @@ Painel do nutricionista, em **React 19 + TypeScript + Vite**.
 src/
 ├── main.tsx        # bootstrap do React
 ├── App.tsx         # casca do painel
-├── components/     # componentes reutilizáveis
-├── pages/          # uma pasta/arquivo por tela
+├── components/     # componentes reutilizáveis (plan/: blocos e busca de alimento)
+├── pages/          # uma pasta/arquivo por tela (PatientsPage: vínculos, RF15)
 ├── lib/
 │   ├── env.ts      # leitura validada das variáveis VITE_*
-│   └── api.ts      # cliente HTTP + injeção do JWT
+│   ├── api.ts      # cliente HTTP + injeção do JWT
+│   ├── plans.ts    # API e rascunho do construtor de planos
+│   └── planHistory.ts # histórico de versões do plano e "o que mudou"
 └── types/          # tipos compartilhados
 ```
 
 O alias `@/` aponta para `src/` (configurado em `vite.config.ts` e `tsconfig.app.json`).
+
+## Telas
+
+### Login e cadastro (Task 1.2)
+
+`src/auth/AuthProvider.tsx`: com **Lembrar de mim** o token fica no `localStorage`
+(sem, no `sessionStorage`, até fechar a aba) e é injetado em todas as chamadas; um
+401 com sessão aberta volta para o login com o aviso de sessão expirada.
+
+### Layout (protótipo)
+
+Depois de entrar, o painel tem o **menu lateral** e a **barra superior** do protótipo
+(`src/pages/HomePage.tsx`), com a identidade visual dele (paleta, Nunito, cartões e
+botões com "degrau", em `src/index.css`). A seção fica no hash da URL (`#/pacientes`),
+então voltar e recarregar mantêm o lugar:
+
+| Seção | O que tem |
+|---|---|
+| **Visão Geral** (`OverviewPage`) | indicadores da carteira (ativos, alertas críticos, adesão média, ofensiva média), tabela de monitoramento com paginação e **Exportar** em CSV (`GET /nutricionista/visao-geral`) |
+| **Pacientes & Vínculos** (`PatientsHubPage`, `PatientChart`) | filtros Todos/Ativos/Em risco/Pendentes, cartões dos pacientes e a **ficha**: triagem (peso, IMC, TMB, nível), planejado × consumido de hoje, gráfico de 7 dias, relatório PDF, **Incentivo (+10 XP)**, ajustar prescrição e desvincular |
+| **Prescrição de Dietas** | construtor e histórico do plano (abaixo) |
+| **Alertas de Desvio** | regra e leitura dos alertas (Task 5.4) |
+
+Na barra superior: busca de paciente, **sino** (alertas não lidos e vínculos pendentes,
+atualizado a cada minuto), nome e CRN do profissional e Sair. O **código de vínculo**
+só é gerado quando o nutricionista pede (Gerar Código de Vínculo / Convidar Paciente) e
+vem também em **QR Code** (`nutrivision://vinculo?codigo=...`), que o app escaneia.
+
+### Dashboards e alertas de abandono (Task 5.2, RF07.1, RF10.1)
+
+- **Alerta de abandono (`src/lib/linksApi.ts`)**: exibe o aviso vermelho
+  (`Alerta de abandono`) no dashboard da ficha do paciente quando `streak === 0` por 3 ou mais dias consecutivos (`dias_streak_zero >= 3`
+  ou `alerta_abandono = true`).
+- **Gráfico de 7 dias (`src/pages/DashboardPage.tsx`, `src/components/dashboard/SevenDayCaloriesChart.tsx`)**:
+  utiliza **Recharts** (`LineChart`) para comparar a **Linha de Meta Calórica** (fixa, a partir
+  do plano ativo em `GET /pacientes/{id}/planos/ativo`) com a **Linha de Consumo Real**
+  (`GET /refeicoes/consumo-diario` nos últimos 7 dias), além de indicadores de média consumida
+  e dias dentro da meta.
+
+### Construtor de planos alimentares (Task 5.1, RF09.1)
+
+`src/pages/PlanBuilderPage.tsx`. O nutricionista:
+
+1. escolhe o **paciente pelo nome** e, se quiser, carrega o plano ativo dele ou
+   continua o **rascunho** salvo;
+2. dá título e orientações gerais ao plano;
+3. monta os **blocos de refeição**: nome (com sugestões: café da manhã, ceia...),
+   horário, **meta de kcal**, **meta de proteínas** e, opcionais, as metas de
+   **carboidrato** e **gordura**, e a **lista de alimentos** com
+   gramas. O alimento pode vir da busca na TACO (selo `TACO`, entra como
+   `alimento_taco_id`) ou ser digitado livre;
+4. reordena/remove blocos e vê, por bloco, a estimativa de kcal e proteínas dos
+   alimentos escolhidos da TACO contra a meta, e no rodapé as metas do dia;
+5. clica em **Prescrever plano** (`POST /pacientes/{id}/planos`): o plano novo vira o
+   ativo e substitui o anterior. **Salvar rascunho**
+   (`PUT /pacientes/{id}/planos/rascunho`) guarda o plano sem que ele valha para o
+   paciente.
+
+### Histórico de versões do plano (Task 5.3, RF08, RNF08)
+
+`src/pages/PlanHistoryPage.tsx` (**Prescrição de Dietas → Histórico do plano**). O
+nutricionista escolhe o paciente e vê, da mais nova para a mais antiga, cada versão salva do plano com o
+**autor**, a **data/hora** (horário de Brasília) e **o que mudou** em relação à versão
+anterior (título, orientações, refeições adicionadas/removidas, horário, metas e
+alimentos). **Editar plano ativo** abre o construtor já com o plano carregado; salvar
+(`POST /pacientes/{id}/planos`) gera uma versão nova.
+
+Contrato esperado do back-end (Task 5.3 [Back]), documentado em `src/lib/planHistory.ts`:
+
+- `GET /pacientes/{id}/planos/versoes`: lista de versões, da mais nova para a mais antiga.
+  Cada item é o plano completo (mesmos campos de `GET /pacientes/{id}/planos/ativo`) mais
+  `versao` (número sequencial por paciente) e `autor` (`{ id, nome }` ou `null`).
+  Só o nutricionista vinculado ao paciente; 404 sem paciente e 403 sem vínculo.
+
+O "o que mudou" é calculado no front, comparando cada versão com a anterior (os blocos
+pelo nome, porque os ids mudam a cada versão).
+
+A validação (`src/lib/plans.ts`) repete os limites do back-end para o erro aparecer no
+campo. Para testar, o nutricionista precisa estar vinculado ao paciente
+(`POST /linking-code` + `POST /link` no back-end).
 
 ## Rodando localmente
 
@@ -36,8 +118,8 @@ npm install
 npm run dev
 ```
 
-Abre em <http://localhost:5173>. A tela inicial mostra se a API do back-end
-está respondendo — útil para conferir que o `.env.local` está correto.
+Abre em <http://localhost:5173>. O rodapé mostra se a API do back-end está
+respondendo, o que ajuda a conferir se o `.env.local` está correto.
 
 ## Scripts
 
@@ -50,6 +132,9 @@ está respondendo — útil para conferir que o `.env.local` está correto.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format` | Prettier (escreve) |
 | `npm run format:check` | Prettier (só verifica) |
+| `npm test` | testes de componentes (Vitest + Testing Library) |
+| `npm run test:coverage` | testes com cobertura (mínimo de 80% de linhas) |
+| `npm run test:e2e` | E2E do fluxo principal (Playwright; rode `npx playwright install chromium` uma vez) |
 
 ## Variáveis de ambiente
 
@@ -60,8 +145,33 @@ segredo aqui**.
 ## CI/CD (RNF08)
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a cada push e pull
-request em `main`/`develop`: Prettier, oxlint, `tsc` e build de produção, com o
-`dist/` publicado como artefato.
+request em `main`/`dev`: Prettier, oxlint, `tsc` e build de produção (com o
+`dist/` publicado como artefato), testes de componentes com cobertura e o E2E
+do fluxo principal no Chromium.
+
+## Testes (Task 7.4)
+
+- **Componentes** (`src/**/*.test.tsx`): Vitest em jsdom com Testing Library.
+  O `fetch` é trocado por uma API falsa (`src/test/fakeApi.ts`), então nenhum
+  teste depende do back-end no ar.
+- **E2E** (`e2e/`): Playwright contra o build de produção (`vite preview`), com
+  a API interceptada no navegador. São dois fluxos:
+  - [`fluxo-principal.spec.ts`](e2e/fluxo-principal.spec.ts): login → Visão Geral →
+    Prescrição de Dietas (paciente pelo nome, busca na TACO, metas, blocos) →
+    prescrever → reabrir o plano ativo → recarregar a página → sair.
+  - [`acompanhamento.spec.ts`](e2e/acompanhamento.spec.ts): "Ver Ficha" na Visão
+    Geral → ficha com o dashboard de 7 dias (resumo, tabela, gráfico e alerta de
+    abandono) → troca de paciente → Alertas de Desvio (regra, verificação, marcar
+    como lido e filtro de não lidos).
+- Dashboards e alertas também têm testes de componente (`DashboardPage`,
+  `SevenDayCaloriesChart`, `DeviationAlertsPage`) e do cliente da API
+  (`deviationAlertsApi`).
+
+## Documentação Técnica do Sistema
+
+Para entender a arquitetura completa, integrações e modelagem de dados:
+- [Documento de Arquitetura](../Documentação/ARQUITETURA.md) — Visão C4, fluxos de integração e modelo clínico.
+- [Modelagem de Banco de Dados](../Documentação/BANCO_DE_DADOS.md) — DER completo e dicionário de dados.
 
 ## Repositórios do projeto
 
